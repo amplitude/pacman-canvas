@@ -349,7 +349,9 @@ function geronimo() {
 			if (!this.running) {
 				if ($('#playerEmail').val() === undefined || $('#playerEmail').val() === '') {
 					login();
+					console.log("don't start yet");
 				} else {
+					console.log("start");
 					// start timer
 					this.timer.start();
 
@@ -1423,7 +1425,7 @@ function geronimo() {
 				$('#form-validater').html("Please enter a valid email<br/>");
 			} else {
 				$('#form-validater').html("");
-				amplitude.getInstance().setUserId(input);
+				amplitude.getInstance().setUserId($('#playerEmail').val());
 				$('#email-form').hide();
 				game.newGame();
 			}
