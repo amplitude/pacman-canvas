@@ -40,7 +40,7 @@ function geronimo() {
 		}; e.amplitude = n;
 	})(window, document);
 
-	//amplitude.getInstance().init("7ce925d7704fbb2104606431cacf209a");
+	amplitude.getInstance().init("7ce925d7704fbb2104606431cacf209a");
 
 	var Airtable = require('airtable');
 	var base = new Airtable({ apiKey: 'keymW1ZElKs4tF7ib' }).base('appCppypdYKJeG9QI');
@@ -81,20 +81,20 @@ function geronimo() {
 	}
 
 	function addHighscore() {
-		// var email = $("#playerEmail").val();
-		// $("#highscore-form").html("Saving highscore...");
-		// base('Scores').create({
-		// 	'name': email,
-		// 	'score': game.score.score,
-		// 	'level': game.level
-		// }, function (err, record) {
-		// 	if (err) {
-		// 		console.log(err);
-		// 		return;
-		// 	}
-		// 	console.log('Highscore added');
-		// 	$('#highscore-form').html('<span class="button" id="show-highscore">View Leaderboard</span>');
-		// });
+		var email = $("#playerEmail").val();
+		$("#highscore-form").html("Saving highscore...");
+		base('Scores').create({
+			'name': email,
+			'score': game.score.score,
+			'level': game.level
+		}, function (err, record) {
+			if (err) {
+				console.log(err);
+				return;
+			}
+			console.log('Highscore added');
+			$('#highscore-form').html('<span class="button" id="show-highscore">View Leaderboard</span>');
+		});
 	}
 
 	function buildWall(context, gridX, gridY, width, height) {
@@ -263,7 +263,7 @@ function geronimo() {
 		this.toggleSound = function () {
 			this.soundfx === 0 ? this.soundfx = 1 : this.soundfx = 0;
 			$('#mute').toggle();
-			//amplitude.getInstance().logEvent('Toggled.Sound');
+			amplitude.getInstance().logEvent('Toggled.Sound');
 		};
 
 		this.reset = function () {
@@ -271,7 +271,7 @@ function geronimo() {
 
 		this.newGame = function () {
 			console.log("new Game");
-			//amplitude.getInstance().logEvent('New.Game');
+			amplitude.getInstance().logEvent('New.Game');
 			this.init(0);
 			this.pauseResume();
 		};
@@ -280,7 +280,7 @@ function geronimo() {
 			this.level++;
 			this.ghostSpeedNormal = this.level > 8 ? 5 : this.level > 4 ? 3 : 2;;
 			console.log("Level " + game.level);
-			//amplitude.getInstance().logEvent('Next.Level');
+			amplitude.getInstance().logEvent('Next.Level');
 			game.showMessage("Level " + game.level, this.getLevelTitle() + "<br/>(Click to continue!)");
 			game.refreshLevel(".level");
 			this.init(1);
@@ -692,7 +692,7 @@ function geronimo() {
 
 		this.die = function () {
 			if (!this.dead) {
-				//amplitude.getInstance().logEvent('Killed.Ghost', { 'name': name });
+				amplitude.getInstance().logEvent('Killed.Ghost', { 'name': name });
 				game.score.add(100);
 				//this.reset();
 				this.dead = true;
@@ -1137,14 +1137,14 @@ function geronimo() {
 					) {
 						var s;
 						if (field === "powerpill") {
-							//amplitude.getInstance().logEvent('Ate.PowerPill');
+							amplitude.getInstance().logEvent('Ate.PowerPill');
 							Sound.play("powerpill");
 							s = 50;
 							this.enableBeastMode();
 							game.startGhostFrightened();
 						}
 						else {
-							//amplitude.getInstance().logEvent('Ate.Pill');
+							amplitude.getInstance().logEvent('Ate.Pill');
 							Sound.play("waka");
 							s = 10;
 							game.pillCount--;
@@ -1220,7 +1220,7 @@ function geronimo() {
 			this.beastMode = true;
 			this.beastModeTimer = 240;
 			//console.log("Beast Mode activated!");
-			//amplitude.getInstance().logEvent('Enabled.Beast.Mode');
+			amplitude.getInstance().logEvent('Enabled.Beast.Mode');
 			inky.dazzle();
 			pinky.dazzle();
 			blinky.dazzle();
@@ -1229,7 +1229,7 @@ function geronimo() {
 		this.disableBeastMode = function () {
 			this.beastMode = false;
 			//console.log("Beast Mode is over!");
-			//amplitude.getInstance().logEvent('Disabled.Beast.Mode');
+			amplitude.getInstance().logEvent('Disabled.Beast.Mode');
 			inky.undazzle();
 			pinky.undazzle();
 			blinky.undazzle();
@@ -1311,12 +1311,12 @@ function geronimo() {
 			clyde.reset();
 			this.lives--;
 			console.log("pacman died, " + this.lives + " lives left");
-			//amplitude.getInstance().logEvent('Died', { 'livesLeft': this.lives });
+			amplitude.getInstance().logEvent('Died', { 'livesLeft': this.lives });
 			if (this.lives <= 0) {
 				//var input = "<div id='highscore-form'><span id='form-validater'></span><input type='text' id='playerName'/><span class='button' id='score-submit'>save</span></div>";
 				game.showMessage("Game over", "Total Score: " + game.score.score);
 				game.gameOver = true;
-				//amplitude.getInstance().logEvent('Game Over', { 'score': game.score.score });
+				amplitude.getInstance().logEvent('Game Over', { 'score': game.score.score });
 				addHighscore();
 				// $('#playerEmail').focus();
 			}
@@ -1423,7 +1423,7 @@ function geronimo() {
 				$('#form-validater').html("Please enter a valid email<br/>");
 			} else {
 				$('#form-validater').html("");
-				//amplitude.getInstance().setUserId(input);
+				amplitude.getInstance().setUserId(input);
 				$('#email-form').hide();
 				game.newGame();
 			}
