@@ -1217,7 +1217,7 @@ function geronimo() {
 			amplitude.getInstance().logEvent('Died', { 'livesLeft': this.lives });
 			if (this.lives <= 0) {
 				//var input = "<div id='highscore-form'><span id='form-validater'></span><input type='text' id='playerName'/><span class='button' id='score-submit'>save</span></div>";
-				game.showMessage("Game over", "Total Score: " + game.score.score + $('#playerEmail').val());
+				game.showMessage("Game over", "Total Score: " + game.score.score);
 				game.gameOver = true;
 				amplitude.getInstance().logEvent('Game Over', { 'score': game.score.score });
 				addHighscore();
