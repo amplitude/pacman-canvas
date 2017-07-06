@@ -1,8 +1,29 @@
+
+(function(e,t){var n=e.amplitude||{_q:[],_iq:{}};var r=t.createElement("script");r.type="text/javascript";
+r.async=true;r.src="https://d24n15hnbwhuhn.cloudfront.net/libs/amplitude-3.4.0-min.gz.js";
+r.onload=function(){e.amplitude.runQueuedFunctions()};var i=t.getElementsByTagName("script")[0];
+i.parentNode.insertBefore(r,i);function s(e,t){e.prototype[t]=function(){this._q.push([t].concat(Array.prototype.slice.call(arguments,0)));
+return this}}var o=function(){this._q=[];return this};var a=["add","append","clearAll","prepend","set","setOnce","unset"];
+for(var u=0;u<a.length;u++){s(o,a[u])}n.Identify=o;var c=function(){this._q=[];return this;
+};var p=["setProductId","setQuantity","setPrice","setRevenueType","setEventProperties"];
+for(var l=0;l<p.length;l++){s(c,p[l])}n.Revenue=c;var d=["init","logEvent","logRevenue","setUserId","setUserProperties","setOptOut","setVersionName","setDomain","setDeviceId","setGlobalUserProperties","identify","clearUserProperties","setGroup","logRevenueV2","regenerateDeviceId","logEventWithTimestamp","logEventWithGroups"];
+function v(e){function t(t){e[t]=function(){e._q.push([t].concat(Array.prototype.slice.call(arguments,0)));
+}}for(var n=0;n<d.length;n++){t(d[n])}}v(n);n.getInstance=function(e){e=(!e||e.length===0?"$default_instance":e).toLowerCase();
+if(!n._iq.hasOwnProperty(e)){n._iq[e]={_q:[]};v(n._iq[e])}return n._iq[e]};e.amplitude=n;
+})(window,document);
+amplitude.getInstance().init("20732ada648ee1d0dde288f000977440");
+
+var Airtable = require('airtable');
+var base = new Airtable({ apiKey: 'keymW1ZElKs4tF7ib' }).base('appCppypdYKJeG9QI');
+
+
 // CONSTANTS
 const START_X = 100;
 const START_Y = 400;
 const MAX_X = 1200;
 const MAX_Y = 800;
+
+const GAME_VERSION = 'v0.6.5';
 
 // pipe constants
 const pipeHeight = 50;
@@ -25,6 +46,11 @@ const VEHICLES = {
 
 const VEHICLE_LIST = [VEHICLES.BALLOON, VEHICLES.SQUARE, VEHICLES.PLANE];
 
+const STAGES = {
+    'DESERT': 'desert',
+};
+const STAGE_LIST = [STAGES.DESERT];
+
 // mapping to sprite file names
 const SPRITES = {
     BALLOON: 'balloon',
@@ -37,6 +63,18 @@ const SPRITES = {
     SKY_CACTUS: 'cloud-cactus',
     EARTH_CACTUS: 'ground-cactus',
 };
+
+const SPRITE_SHEETS = {
+    // TODO get real assets
+    BUTTON_SHEET: 'button',
+};
+
+const SHEET_DIMENSIONS = {
+    [SPRITE_SHEETS.BUTTON_SHEET]: [50, 50],
+};
+
+const BUTTON_SHEET_HEIGHT = 50;
+const BUTTON_SHEET_WIDTH = 50;
 // controls falling of main sprite
 const vehicleToGravity = {
     [VEHICLES.BALLOON]: 600,
@@ -89,19 +127,68 @@ const vehicleToFuelDrainMillis = {
 
 const vehicleToAnalyticsName = {
     [VEHICLES.BALLOON]: 'balloon',
-    [VEHICLES.SQUARE]: 'box',
+    [VEHICLES.SQUARE]: 'glitch',
     [VEHICLES.PLANE]: 'paper plane',
+};
+
+const vehicleToScoreName = {
+    [VEHICLES.BALLOON]: 'Hot Air Balloon',
+    [VEHICLES.SQUARE]: 'Abstract Art',
+    [VEHICLES.PLANE]: 'Paper Airplane',
+};
+
+const stageToAnalyticsName = {
+    [STAGES.DESERT]: 'desert',
+};
+
+const stageToScoreName = {
+    [STAGES.DESERT]: 'Dusty Desert',
 };
 
 const preloadSprites = function preloadSprites() {
     Object.keys(SPRITES).forEach(key => {
         game.load.image(SPRITES[key], 'assets/' + SPRITES[key] + '.png');
     });
-}
 
+    Object.keys(SPRITE_SHEETS).forEach(key => {
+        const val = SPRITE_SHEETS[key];
+        const dimensions = SHEET_DIMENSIONS[val];
+        game.load.spritesheet(val, 'assets/' + val + '_sheet.png',dimensions[0], dimensions[1]);
+    })
+};
+
+let localHighScore = 0;
+let userName = '';
 let vehicleIndex = 0;
 let vehicleType = VEHICLES.BALLOON;
+let selectedStage = STAGES.DESERT;
 let DEBUG = true;
+
+function isValidEmail(email) {
+    var re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+    return re.test(email);
+};
+
+function logHighscore(score, duration, vehicle, stage) {
+    const lastScore = localHighScore;
+    localHighScore = Math.max(localHighScore, score);
+
+    base('Data Explorer Scores').create({
+        'name': userName,
+        'score': score,
+        'vehicle': vehicleToScoreName[vehicle],
+        'survival time': duration,
+        'stage': stageToScoreName[stage],
+    }, function (err, record) {
+        if (err) {
+            console.log(err);
+            return;
+        }
+        console.log('Highscore added');
+    })
+
+    return score > lastScore;
+};
 
 // HELPERS
 function addSinglePipe(y, obstacleGroup, data) {
@@ -160,7 +247,78 @@ var loadState = {
         game.stage.backgroundColor = '#71c5cf';
     },
     create: function() {
-        game.state.start('menu');
+        game.state.start('login');
+    },
+};
+
+// enter name screen
+var loginState = {
+    // TODO
+    create: function() {
+        amplitude.getInstance().regenerateDeviceId();
+        var identify = new amplitude.Identify().set('version', GAME_VERSION);
+        amplitude.getInstance().identify(identify);
+        userName = '';
+
+        const loginPrompt = game.add.text(MAX_X / 2, 100, 'Please enter your email', {
+            font: '30px Arial',
+            fill: '#ffffff',
+        });
+        loginPrompt.anchor.set(0.5);
+
+        this.userInput = game.add.inputField(MAX_X / 2 - 200, 200, {
+            blockInput: false,
+            font: '18px Arial',
+            fill: '#212121',
+            width: 400,
+            max: 40,
+            padding: 8,
+            borderWidth: 1,
+            borderColor: '#000',
+            placeHolder: 'Email',
+            textAlign: 'center',
+        });
+        this.userInput.setText(userName);
+        this.userInput.startFocus();
+
+
+        const submitButton = game.add.button(MAX_X / 2, MAX_Y / 2, 'button', this.onSubmit, this, 0, 0, 0);
+        submitButton.anchor.set(0.5, 0.5);
+        const submitButtonLabel = game.add.text(MAX_X / 2, MAX_Y / 2 + 50, 'Click the button to continue', {
+            font: '24px Arial',
+            fill: '#ffffff',
+        });
+        submitButtonLabel.anchor.set(0.5, 0.5);
+
+
+        this.enterKey = game.input.keyboard.addKey(Phaser.Keyboard.ENTER);
+        this.enterKey.onDown.add(this.onSubmit, this);
+
+        this.invalidEmail = game.add.text(MAX_X / 2, MAX_Y - 100, 'Invalid Email', {
+            font: '30px Arial',
+            fill: '#ff0000',
+        });
+        this.invalidEmail.anchor.set(0.5);
+        this.invalidEmail.visible = false;
+    },
+
+    onSubmit: function() {
+        this.onSetUserName(this.userInput.value);
+    },
+
+    onSetUserName: function(name) {
+        // TODO validation
+        if (isValidEmail(name)) {
+            amplitude.getInstance().setUserId(name);
+            var identify = new amplitude.Identify().set('version', GAME_VERSION);
+            amplitude.getInstance().identify(identify);
+            userName = name;
+            game.state.start('menu');
+        } else {
+            this.invalidEmail.visible = true;
+
+            this.userInput.startFocus();
+        }
     },
 };
 
@@ -187,6 +345,10 @@ var menuState = {
                 font: '25px Arial',
                 fill: '#eeeeee',
             });
+
+        // randomly select a vehicle
+        // vehicleIndex = Math.floor(Math.random() *  VEHICLE_LIST.length);
+        vehicleType = VEHICLE_LIST[vehicleIndex];
 
         // logic for selecting vehicle
         this.vehicles = VEHICLE_LIST.map(vehicle => {
@@ -222,7 +384,9 @@ var menuState = {
 
     },
     start: function () {
-        // TODO analytics
+        var identify = new amplitude.Identify().set('vehicle', vehicleType).set('stage', selectedStage);
+        amplitude.getInstance().identify(identify);
+        amplitude.getInstance().logEvent('Game Started');
         game.state.start('play');
     },
     update: function() {
@@ -231,15 +395,33 @@ var menuState = {
         });
     },
     onLeft: function() {
+        const lastType = vehicleType;
+
         vehicleIndex -= 1;
         if (vehicleIndex < 0) {
             vehicleIndex += VEHICLE_LIST.length;
         }
         vehicleType = VEHICLE_LIST[vehicleIndex];
+
+        const eventProperties = {
+            direction: 'left',
+            lastVehicle: vehicleToAnalyticsName[lastType],
+            vehicle: vehicleToAnalyticsName[vehicleType],
+        };
+        amplitude.getInstance().logEvent('Cycle Vehicle', eventProperties);
     },
     onRight: function() {
+        const lastType = vehicleType;
+
         vehicleIndex = (vehicleIndex + 1) % VEHICLE_LIST.length;
         vehicleType = VEHICLE_LIST[vehicleIndex];
+
+        const eventProperties = {
+            direction: 'left',
+            lastVehicle: vehicleToAnalyticsName[lastType],
+            vehicle: vehicleToAnalyticsName[vehicleType],
+        };
+        amplitude.getInstance().logEvent('Cycle Vehicle', eventProperties);
     },
 };
 
@@ -288,9 +470,10 @@ var playState = {
 
         this.canRestart = false;
         this.score = 0;
-        this.labelScore = game.add.text(20, 20, "0", { font: "30px Arial", fill: "#ffffff" });
+        this.labelScore = game.add.text(20, 20, "Score: 0", { font: "30px Arial", fill: "#ffffff" });
 
         // analytics
+        this.startTime = game.time.now;
         this.spaceCount = 0;
         this.skyCactusCount = 0;
         this.groundCactusCount = 0;
@@ -316,7 +499,7 @@ var playState = {
                 // check collisions
                 game.physics.arcade.overlap(this.vehicle, this.obstacles, (vehicle, obstacle) => {
                     if (this.vehicle.alive) {
-                        this.gameOver(obstacle.type);
+                        this.gameOver(obstacle.ampData.type);
                     }
                 }, null, this);
             }
@@ -358,7 +541,7 @@ var playState = {
     // debugging
     render: function() {
         if (DEBUG) {
-            game.debug.bodyInfo(this.vehicle, 32, 32);
+            // game.debug.bodyInfo(this.vehicle, 32, 32);
 
             game.debug.body(this.vehicle);
             this.obstacles.forEach((obstacle) => game.debug.body(obstacle));
@@ -385,7 +568,7 @@ var playState = {
 
         cactus.body.setSize(200, 220, 25, 20);
         cactus.ampData = {
-            type: 'cloudy cactus',
+            type: 'large floating object',
             marked: false,
         }
     },
@@ -396,7 +579,7 @@ var playState = {
 
         cactus.body.setSize(200, 200, 25, 40);
         cactus.ampData = {
-            type: 'grounded cactus',
+            type: 'large grounded object',
             marked: false,
         }
     },
@@ -407,6 +590,7 @@ var playState = {
 
         coin.ampData = {
             value: 1,
+            type: 'coin',
             marked: false,
         };
     },
@@ -417,6 +601,7 @@ var playState = {
 
         coin.ampData = {
             value: 10,
+            type: 'amplitude coin',
             marked: false,
         };
     },
@@ -466,8 +651,12 @@ var playState = {
     },
     onCollectCoin: function(coinSprite) {
         this.score += coinSprite.ampData.value;
-        this.labelScore.text = this.score;
+        this.labelScore.text = 'Score: ' + this.score;
         this.maybeMarkCoin(coinSprite);
+        const eventProperties = this.getAnalyticsEventProperties();
+        eventProperties['type'] = coinSprite.ampData.type;
+        amplitude.getInstance().logEvent('Item Collected', eventProperties);
+
         coinSprite.destroy();
     },
     // Restart the game
@@ -492,6 +681,13 @@ var playState = {
                 font: '40px Arial',
                 fill: '#111111',
             });
+
+        // analytics + leaderboard
+        const eventProperties = this.getAnalyticsEventProperties();
+        eventProperties['cause of death'] = cause;
+        eventProperties['out of fuel'] = this.currentFuel <= 0;
+        amplitude.getInstance().logEvent('Game Ended', eventProperties);
+        logHighscore(this.score, eventProperties.duration, vehicleType, selectedStage);
     },
     allowRestart: function() {
         this.gameOverLabel.text = 'Game Over... press Space to return';
@@ -519,6 +715,20 @@ var playState = {
             obstacle.ampData.marked = true;
         }
     },
+    getAnalyticsEventProperties: function() {
+        return {
+            score: this.score,
+            'fuel left': this.currentFuel,
+            'fuel fraction': this.currentFuel / maxFuel,
+            'duration': Math.floor((game.time.now - this.startTime) / 1000),
+            'large ground obstacle count': this.groundCactusCount,
+            'large air obstacle count': this.skyCactusCount,
+            'coin count': this.coinCount,
+            'amplitude coin count': this.bigCoinCount,
+            'spacebar down count': this.spaceCount,
+            'debug mode': DEBUG,
+        };
+    }
 };
 
 var endState = {
@@ -528,14 +738,21 @@ var endState = {
     },
 };
 
-// Initialize Phaser and main frame
-var game = new Phaser.Game(MAX_X, MAX_Y);
 
-// add game states
-game.state.add('boot', bootState);
-game.state.add('load', loadState);
-game.state.add('menu', menuState);
-game.state.add('play', playState);
-game.state.add('end', endState);
-// Start the state to actually start the game
-game.state.start('boot');
+// Initialize Phaser and main frame
+var game = new Phaser.Game(MAX_X, MAX_Y, Phaser.AUTO);
+
+Phaser.Device.whenReady(function() {
+    game.plugins.add(PhaserInput.Plugin);
+
+    // add game states
+    game.state.add('boot', bootState);
+    game.state.add('load', loadState);
+    game.state.add('login', loginState);
+    game.state.add('menu', menuState);
+    game.state.add('play', playState);
+    game.state.add('end', endState);
+    // Start the state to actually start the game
+    game.state.start('boot');
+});
+
