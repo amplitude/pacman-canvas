@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="35px" height="41px" viewBox="0 0 35 41" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <!-- Generator: Sketch 45.1 (43504) - http://www.bohemiancoding.com/sketch -->
+    <title>Group 12</title>
+    <desc>Created with Sketch.</desc>
+    <defs></defs>
+    <g id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="Group-12">
+            <path d="M13.2831413,40.4648008 L11.4294163,38.040549 L9.19446533,40.9484995 C3.9033905,38.2369148 -4.61628359e-16,32.9324045 0,26.091915 C6.81634868e-16,15.9913309 7.33212203,7.80318955 17.4327062,7.80318955 C27.5332904,7.80318955 34.3657249,17.1245574 34.3657249,26.091915 C34.3657249,32.2081884 30.6390006,37.8208953 25.4382863,40.7716368 L23.339266,38.040549 L21.4798347,40.4722633 L19.6109026,38.040549 L17.379585,40.9586062 L15.1368664,38.040549 L13.2831413,40.4648008 Z" id="Combined-Shape" fill="#CC0A00"></path>
+            <polygon id="Rectangle-11" fill="#CC0A00" transform="translate(7.559340, 7.559340) scale(-1, -1) translate(-7.559340, -7.559340) " points="4.38929412 0.975398693 10.7293856 0.975398693 7.55126183 14.1432811"></polygon>
+            <polygon id="Rectangle-11" fill="#CC0A00" transform="translate(26.091915, 6.583941) scale(-1, -1) translate(-26.091915, -6.583941) " points="22.9218693 0 29.2619608 0 26.083837 13.1678824"></polygon>
+            <g id="Group-7" transform="translate(7.315490, 18.532575)">
+                <ellipse id="Oval-12" fill="#FFFFFF" cx="4.38929412" cy="5.16973059" rx="4.38929412" ry="5.07195569"></ellipse>
+                <ellipse id="Oval-12" fill="#FFFFFF" cx="15.6063791" cy="5.16973059" rx="4.38929412" ry="5.07195569"></ellipse>
+                <ellipse id="Oval-12" fill="#006FBE" cx="4.36550391" cy="5.17533396" rx="1.92700717" ry="2.06635232"></ellipse>
+                <ellipse id="Oval-12" fill="#006FBE" cx="15.5825889" cy="5.17533396" rx="1.92700717" ry="2.06635232"></ellipse>
+            </g>
+            <g id="Group-11" transform="translate(7.315490, 38.040549)"></g>
+        </g>
+    </g>
+</svg>
