@@ -1,6 +1,6 @@
 // CONSTANTS
 const START_X = 100;
-const START_Y = 245;
+const START_Y = 400;
 const MAX_X = 1200;
 const MAX_Y = 800;
 
@@ -14,7 +14,7 @@ const Y_OFFSET_INCR = 50;
 // cactus constants
 const groundCactusY = 520;
 
-const maxFuel = 100;
+const maxFuel = 500;
 
 // should map to keys in sprite file names
 const VEHICLES = {
@@ -40,8 +40,8 @@ const SPRITES = {
 // controls falling of main sprite
 const vehicleToGravity = {
     [VEHICLES.BALLOON]: 600,
-    [VEHICLES.SQUARE]: 1600,
-    [VEHICLES.PLANE]: 1600,
+    [VEHICLES.SQUARE]: 1500,
+    [VEHICLES.PLANE]: 1500,
 };
 
 const vehicleVelocityToAngleRatio = {
@@ -78,9 +78,14 @@ const vehicleToObstacleTimeout = {
 // controls change in velocity from pressing space
 const vehicleToVelocityDelta = {
     [VEHICLES.BALLOON]: 200,
-    [VEHICLES.SQUARE]: 500,
-    [VEHICLES.PLANE]: 500,
+    [VEHICLES.SQUARE]: 475,
+    [VEHICLES.PLANE]: 475,
 };
+const vehicleToFuelDrainMillis = {
+    [VEHICLES.BALLOON]: 60,
+    [VEHICLES.SQUARE]: 40,
+    [VEHICLES.PLANE]: 40,
+}
 
 const vehicleToAnalyticsName = {
     [VEHICLES.BALLOON]: 'balloon',
@@ -151,6 +156,8 @@ var loadState = {
     preload: function() {
         // could put up a loading screen here
         preloadSprites();
+        // Change the background color of the game to blue
+        game.stage.backgroundColor = '#71c5cf';
     },
     create: function() {
         game.state.start('menu');
@@ -160,8 +167,7 @@ var loadState = {
 // screen to select a vehicle
 var menuState = {
     create: function() {
-        // display game name?
-
+        this.background = game.add.tileSprite(0, 0, 2171, MAX_Y, SPRITES.BACKGROUND);
 
         // Title instructions
         const titleLabel = game.add.text(
@@ -176,21 +182,16 @@ var menuState = {
         const instructions = game.add.text(
             80,
             80,
-            'Help Datamonster soar through the skies!\nTap space to fly higher.',
+            'Help Datamonster soar through the skies!\nTap or hold space to fly higher.',
             {
                 font: '25px Arial',
                 fill: '#eeeeee',
             });
 
-        // Change the background color of the game to blue
-        game.stage.backgroundColor = '#71c5cf';
-
         // logic for selecting vehicle
         this.vehicles = VEHICLE_LIST.map(vehicle => {
             const modifier = vehicleToBodyModifier[vehicle];
-            const centerX = MAX_X / 2;
-            const centerY = MAX_Y / 2;
-            const sprite = game.add.sprite(centerX, centerY, SPRITES[vehicle]);
+            const sprite = game.add.sprite(START_X, START_Y, SPRITES[vehicle]);
             sprite.anchor.setTo(0.5, 0.5);
             sprite.angle = vehicleAngleOffset[vehicle]
             sprite.vehicleType = vehicle;
@@ -211,14 +212,13 @@ var menuState = {
                 fill: '#eeeeee',
             });
 
-        const leftArrow = game.input.keyboard.addKey(Phaser.Keyboard.LEFT);
-        const rightArrow = game.input.keyboard.addKey(Phaser.Keyboard.RIGHT);
-        const spaceKey = game.input.keyboard.addKey(Phaser.Keyboard.SPACEBAR);
+        this.leftArrow = game.input.keyboard.addKey(Phaser.Keyboard.LEFT);
+        this.rightArrow = game.input.keyboard.addKey(Phaser.Keyboard.RIGHT);
+        this.spaceKey = game.input.keyboard.addKey(Phaser.Keyboard.SPACEBAR);
 
-        leftArrow.onDown.add(this.onLeft, this);
-        rightArrow.onDown.add(this.onLeft, this);
-
-        spaceKey.onDown.addOnce(this.start, this);
+        this.leftArrow.onDown.add(this.onLeft, this);
+        this.rightArrow.onDown.add(this.onLeft, this);
+        this.spaceKey.onDown.addOnce(this.start, this);
 
     },
     start: function () {
@@ -270,15 +270,17 @@ var playState = {
         this.obstacles = game.add.group();
 
         // Call the 'jump' function when the spacekey is hit
-        var spaceKey = game.input.keyboard.addKey(Phaser.Keyboard.SPACEBAR);
-        spaceKey.onDown.add(this.onSpace, this);
+        this.spaceKey = game.input.keyboard.addKey(Phaser.Keyboard.SPACEBAR);
+        this.spaceKey.onDown.add(this.onSpace, this);
 
         // create groups to hold all obstacles
         this.obstacles = game.add.group();
         this.coins = game.add.group();
         // fuel is currently unused
         this.fuel = game.add.group();
+        this.fuelTime = game.time.now;
         this.currentFuel = maxFuel;
+        this.fuelLabel = game.add.text(20, MAX_Y - 80, "Fuel: " + maxFuel + "/" + maxFuel, { font: "30px Arial", fill: "#ffffff" });
 
         // create objects
         this.spawnObjects();
@@ -301,10 +303,15 @@ var playState = {
             // slide background
             this.background.tilePosition.x += -1;
 
-            // If the vehicle is out of the screen (too high or too low)
+            // if the vehicle hits the top, bounce off
+            if (this.vehicle.y < 0) {
+                // bounce off the wall
+                this.vehicle.body.velocity.y = Math.max(Math.abs(this.vehicle.body.velocity.y) / 2, vehicleToVelocityDelta[vehicleType] / 2);
+            }
+            // If the vehicle is hit the bottom
             // Call the 'restartGame' function
-            if (this.vehicle.y < 0 || this.vehicle.y > MAX_Y) {
-                this.gameOver(this.vehicle.y < 0 ? 'crash landing' : 'out of air');
+            if (this.vehicle.y + this.vehicle.body.height / 2> MAX_Y) {
+                this.gameOver('crash landing');
             } else {
                 // check collisions
                 game.physics.arcade.overlap(this.vehicle, this.obstacles, (vehicle, obstacle) => {
@@ -321,6 +328,17 @@ var playState = {
                 this.onCollectCoin(coin);
             }, null, this);
         }
+
+        if (this.spaceKey.isDown && this.vehicle.alive && this.currentFuel > 0) {
+            this.vehicle.body.acceleration.y = -vehicleToGravity[vehicleType] - vehicleToVelocityDelta[vehicleType] * 2;
+            if (game.time.now > this.fuelTime) {
+                this.currentFuel -= 1;
+                this.fuelTime = game.time.now + vehicleToFuelDrainMillis[vehicleType];
+            }
+        } else {
+            this.vehicle.body.acceleration.y = 0;
+        }
+        this.fuelLabel.text = "Fuel: " + this.currentFuel + "/" + maxFuel;
 
         this.obstacles.forEach(obstacle => {
             if (obstacle.body.x < START_X) {
@@ -433,10 +451,12 @@ var playState = {
 
     onSpace: function() {
         // Make the vehicle jump
-        if (this.vehicle.alive) {
+        if (this.vehicle.alive && this.currentFuel > 0) {
             // Add a vertical velocity to the vehicle
             this.vehicle.body.velocity.y -= vehicleToVelocityDelta[vehicleType];
             this.spaceCount += 1;
+            this.currentFuel -= 1;
+            this.fuelTime = game.time.now + vehicleToFuelDrainMillis[vehicleType];
         } else {
             // Start the 'main' state, which restarts the game
             if (this.canRestart) {
@@ -465,12 +485,12 @@ var playState = {
         game.time.events.add(Phaser.Timer.SECOND * 1, this.allowRestart, this);
 
         this.gameOverLabel = game.add.text(
-            80,
-            MAX_Y - 80,
+            160,
+            MAX_Y / 2,
             'Game Over...',
             {
-                font: '25px Arial',
-                fill: '#ff00ff',
+                font: '40px Arial',
+                fill: '#111111',
             });
     },
     allowRestart: function() {
