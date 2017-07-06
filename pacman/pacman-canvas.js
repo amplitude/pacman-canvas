@@ -58,6 +58,11 @@ function geronimo() {
 	//var base = new Airtable({ apiKey: 'keymW1ZElKs4tF7ib' }).base('appCppypdYKJeG9QI');
 
 	/* AJAX stuff */
+	function login() {
+		$('#email-form').show();
+		$('#playerEmail').focus();
+	}
+
 	function getHighscore() {
 		$("#highscore-list").text("");
 		base('Scores').select({
@@ -76,10 +81,10 @@ function geronimo() {
 	}
 
 	function addHighscore() {
-		var name = $("input[type=text]").val();
+		var email = $("#playerEmail").val();
 		$("#highscore-form").html("Saving highscore...");
 		base('Scores').create({
-			'name': name,
+			'name': email,
 			'score': game.score.score,
 			'level': game.level
 		}, function (err, record) {
@@ -188,7 +193,7 @@ function geronimo() {
 		this.ghostFrightenedTimer = 240;
 		this.ghostMode = 0;			// 0 = Scatter, 1 = Chase
 		this.ghostModeTimer = 200;	// decrements each animationLoop execution
-		this.ghostSpeedNormal = (this.level > 4 ? 3 : 2);	// global default for ghost speed
+		this.ghostSpeedNormal = this.level > 8 ? 5 : this.level > 4 ? 3 : 2;	// global default for ghost speed
 		this.ghostSpeedDazzled = 2; // global default for ghost speed when dazzled
 
 		/* Game Functions */
@@ -273,6 +278,7 @@ function geronimo() {
 
 		this.nextLevel = function () {
 			this.level++;
+			this.ghostSpeedNormal = this.level > 8 ? 5 : this.level > 4 ? 3 : 2;;
 			console.log("Level " + game.level);
 			amplitude.getInstance().logEvent('Next.Level');
 			game.showMessage("Level " + game.level, this.getLevelTitle() + "<br/>(Click to continue!)");
@@ -310,16 +316,16 @@ function geronimo() {
 				// All the ghosts get faster from now on
 				case 6:
 					return '"hunting season 1"';
-				// TODO: No scatter mood this time
+				// No scatter mood this time
 				case 7:
 					return '"the big calm"';
-				// TODO: Only scatter mood this time
+				// Only scatter mood this time
 				case 8:
 					return '"hunting season 2"';
-				// TODO: No scatter mood and all ghosts leave instantly
+				// No scatter mood and all ghosts leave instantly
 				case 9:
 					return '"ghosts on speed"';
-				// TODO: Ghosts get even faster for this level
+				// Ghosts get even faster for this level
 				default:
 					return '"nothing new"';
 			}
@@ -341,13 +347,17 @@ function geronimo() {
 
 		this.pauseResume = function () {
 			if (!this.running) {
-				// start timer
-				this.timer.start();
+				if ($('#playerEmail').val() === undefined || $('#playerEmail').val() === '') {
+					login();
+				} else {
+					// start timer
+					this.timer.start();
 
-				this.pause = false;
-				this.running = true;
-				this.closeMessage();
-				animationLoop();
+					this.pause = false;
+					this.running = true;
+					this.closeMessage();
+					animationLoop();
+				}
 			}
 			else if (this.pause) {
 				// stop timer
@@ -706,12 +716,12 @@ function geronimo() {
 
 				// Clyde does not start chasing before 2/3 of all pills are eaten and if level is < 4
 				if (this.name == "clyde") {
-					if ((game.level < 4) || ((game.pillCount > 104 / 3))) this.stop = true;
+					if ((game.level < 4) || ((game.pillCount > 104 / 3)) && game.level < 8) this.stop = true;
 					else this.stop = false;
 				}
 				// Inky starts after 30 pills and only from the third level on
 				if (this.name == "inky") {
-					if ((game.level < 3) || ((game.pillCount > 104 - 30))) this.stop = true;
+					if ((game.level < 3) || ((game.pillCount > 104 - 30)) && game.level < 8) this.stop = true;
 					else this.stop = false;
 				}
 
@@ -771,10 +781,10 @@ function geronimo() {
 				var tX = this.startPosX / 30;
 				var tY = this.startPosY / 30;
 			}
-			else if (game.ghostMode == 0) {			// Scatter Mode
+			else if ((game.ghostMode == 0 || game.level == 7) && (game.level != 6 || game.level < 8)) {			// Scatter Mode
 				var tX = this.gridBaseX;
 				var tY = this.gridBaseY;
-			} else if (game.ghostMode == 1) {			// Chase Mode
+			} else if (game.ghostMode == 1 || game.level == 6 || game.level > 7) {			// Chase Mode
 
 				switch (this.name) {
 
@@ -810,7 +820,7 @@ function geronimo() {
 						var tY = pacman.getGridPosY();
 						var dist = Math.sqrt(Math.pow((pX - tX), 2) + Math.pow((pY - tY), 2));
 
-						if (dist < 5) {
+						if (dist < 5 && game.level != 6 && game.level < 8) {
 							tX = this.gridBaseX;
 							tY = this.gridBaseY;
 						}
@@ -1206,11 +1216,12 @@ function geronimo() {
 			console.log("pacman died, " + this.lives + " lives left");
 			amplitude.getInstance().logEvent('Died', { 'livesLeft': this.lives });
 			if (this.lives <= 0) {
-				var input = "<div id='highscore-form'><span id='form-validater'></span><input type='text' id='playerName'/><span class='button' id='score-submit'>save</span></div>";
-				game.showMessage("Game over", "Total Score: " + game.score.score + input);
+				//var input = "<div id='highscore-form'><span id='form-validater'></span><input type='text' id='playerName'/><span class='button' id='score-submit'>save</span></div>";
+				game.showMessage("Game over", "Total Score: " + game.score.score + $('#playerEmail').val());
 				game.gameOver = true;
 				amplitude.getInstance().logEvent('Game Over', { 'score': game.score.score });
-				$('#playerName').focus();
+				addHighscore();
+				// $('#playerEmail').focus();
 			}
 			game.drawHearts(this.lives);
 		}
@@ -1297,18 +1308,33 @@ function geronimo() {
 		// Keyboard
 		window.addEventListener('keydown', doKeyDown, true);
 
-		$('#canvas-container').click(function () {
+		$('#canvas-container').click(function (e) {
+			console.log(e.target);
 			if (!(game.gameOver == true)) game.pauseResume();
+		});
+
+		$('#canvas-container #email-form *').click(function (e) {
+			console.log('stopped');
+			console.log(e.target);
+			e.stopPropagation();
+		});
+
+		$('#email-submit').click(function () {
+			console.log("submit email pressed");
+			var patt = /^.+@.+\..+$/;
+			if ($('#playerEmail').val() === undefined || !patt.test($('#playerEmail').val())) {
+				$('#form-validater').html("Please enter a valid email<br/>");
+			} else {
+				$('#form-validater').html("");
+				amplitude.getInstance().setUserId(input);
+				$('#email-form').hide();
+				game.newGame();
+			}
 		});
 
 		$('body').on('click', '#score-submit', function () {
 			console.log("submit highscore pressed");
-			if ($('#playerName').val() === "" || $('#playerName').val() === undefined) {
-				$('#form-validater').html("Please enter a name<br/>");
-			} else {
-				$('#form-validater').html("");
-				addHighscore();
-			}
+			addHighscore();
 		});
 
 		$('body').on('click', '#show-highscore', function () {
@@ -1369,7 +1395,7 @@ function geronimo() {
 
 		// Menu
 		$(document).on('click', '.button#newGame', function (event) {
-			game.newGame();
+			login();
 		});
 		$(document).on('click', '.button#highscore', function (event) {
 			game.showContent('highscore-content');
@@ -1463,6 +1489,7 @@ function geronimo() {
 			image.src = "img/amplitude_logo.svg";
 			//context.drawImage(image, pacman.posX, pacman.posY, 2 * pacman.radius, 2 * pacman.radius);
 
+
 			context.fillStyle = "Yellow";
 			context.strokeStyle = "Yellow";
 			context.arc(pacman.posX + pacman.radius, pacman.posY + pacman.radius, pacman.radius, pacman.angle1 * Math.PI, pacman.angle2 * Math.PI);
@@ -1554,7 +1581,7 @@ function geronimo() {
 				pacman.directionWatcher.set(right);
 				break;
 			case 78:	// N pressed
-				if (!$('#playerName').is(':focus')) {
+				if (!$('#playerEmail').is(':focus')) {
 					game.pause = 1;
 					game.newGame();
 				}
@@ -1564,7 +1591,7 @@ function geronimo() {
 				break;
 			case 8:		// Backspace pressed -> show Game Content
 			case 27:	// ESC pressed -> show Game Content
-				if (!$('#playerName').is(':focus')) {
+				if (!$('#playerEmail').is(':focus')) {
 					evt.preventDefault();
 					game.showContent('game-content');
 				}
