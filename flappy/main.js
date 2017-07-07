@@ -113,6 +113,7 @@ const SPRITES = {
     [VEHICLES.SQUARE]: 'secret-ship',
     PIPE: 'pipe',
     [VEHICLES.PLANE]: 'plane',
+    // objects
     COIN_1: '1coin',
     COIN_A: '5coin',
     SKY_CACTUS: 'cloud-cactus',
@@ -124,8 +125,10 @@ const SPRITES = {
     LONG_ISLAND: 'floating-island',
     RAINBOW_ISLAND: 'rainbow-island',
     AIR_ROCK: 'rock-cluster',
+    // overlays
     INSTRUCTIONS: 'instruction',
     SPLASH: 'data-explorer-splash',
+    GAME_OVER: 'game-over',
 };
 
 const OBSTACLE_SPRITES = {
@@ -767,6 +770,12 @@ var playState = {
         this.score = 0;
         this.labelScore = game.add.text(20, 20, "Score: 0", { font: "30px Arial", fill: "#ffffff" });
 
+        // GAME OVER
+        this.gameOverImage = game.add.sprite(0, 0, SPRITES.GAME_OVER);
+        this.gameOverCropRect = new Phaser.Rectangle(0, 0, this.gameOverImage.width, this.gameOverImage.height - 350);
+        this.gameOverImage.crop(this.gameOverCropRect);
+        this.gameOverImage.visible = false;
+
         // analytics
         this.startTime = game.time.now;
         this.spaceCount = 0;
@@ -1029,14 +1038,15 @@ var playState = {
 
         game.time.events.add(Phaser.Timer.SECOND * 1, this.allowRestart, this);
 
-        this.gameOverLabel = game.add.text(
-            160,
-            MAX_Y / 2,
-            'Game Over...',
-            {
-                font: '40px Arial',
-                fill: '#ff1111',
-            });
+        this.gameOverImage.visible = true;
+        // this.gameOverLabel = game.add.text(
+        //     160,
+        //     MAX_Y / 2,
+        //     'Game Over...',
+        //     {
+        //         font: '40px Arial',
+        //         fill: '#ff1111',
+        //     });
 
         // analytics + leaderboard
         const eventProperties = this.getAnalyticsEventProperties();
@@ -1046,7 +1056,9 @@ var playState = {
         logHighscore(this.score, eventProperties.duration, vehicleType, selectedStage);
     },
     allowRestart: function() {
-        this.gameOverLabel.text = 'Game Over... press Space to return';
+        this.gameOverCropRect.height = MAX_Y;
+        this.gameOverImage.updateCrop();
+        // this.gameOverLabel.text = 'Game Over... press Space to return';
         this.canRestart = true;
     },
 
