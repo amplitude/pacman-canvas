@@ -1319,7 +1319,7 @@ function geronimo() {
 				//var input = "<div id='highscore-form'><span id='form-validater'></span><input type='text' id='playerName'/><span class='button' id='score-submit'>save</span></div>";
 				game.showMessage("Game over", "Total Score: " + game.score.score);
 				game.gameOver = true;
-				amplitude.getInstance().logEvent('Game.Ended', { 'score': game.score.score });
+				amplitude.getInstance().logEvent('Game.Over', { 'score': game.score.score });
 				addHighscore();
 				// $('#playerEmail').focus();
 			}
