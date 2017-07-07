@@ -38,6 +38,83 @@ const generateCoinSquare = function generateCoinSquare(xCenter, yCenter) {
     ];
 };
 
+var easySpawnPatterns = [
+[
+    { x: 9, y: 8, type: '_'},
+].concat(
+    generateCoinLine(10, 0, 0, 6, 2),
+    generateCoinLine(10, 6, 0, 6, 2),
+    generateCoinLine(9, 11, 0, 8, 3),
+    generateCoinDiamond(4, 8),
+    generateCoinDiamond(20, 8),
+),
+[
+    // block top
+    { x: 9, y: 5, type: 'c'},
+    { x: 23, y: 0, type: 'g'},
+].concat(
+    generateCoinSquare(11, 2),
+    generateCoinLine(5, 4, -1.2, 3, 3),
+    generateCoinLine(14, 2, 1.2, 3, 3),
+    generateCoinDiamond(11, 13),
+    generateCoinDiamond(8, 12, false),
+    generateCoinDiamond(14, 12, false),
+),
+
+[
+    // wall bottom
+
+    { x: 10, y: 0, type: 'c'},
+    { x: 24, y: 7, type: 'c'},
+
+    // cluster
+    { x: 2, y: 0, type: '*'},
+    { x: 2, y: 2, type: 'o'},
+    { x: 2, y: 4, type: 'o'},
+    { x: 3, y: 0, type: 'o'},
+    { x: 3, y: 2, type: 'o'},
+    { x: 3, y: 4, type: 'o'},
+    { x: 4, y: 0, type: 'o'},
+    { x: 4, y: 2, type: 'o'},
+    { x: 4, y: 4, type: '*'},
+    { x: 5, y: 0, type: 'o'},
+    { x: 5, y: 2, type: 'o'},
+    { x: 5, y: 4, type: 'o'},
+    { x: 6, y: 0, type: '*'},
+    { x: 6, y: 2, type: 'o'},
+    { x: 6, y: 4, type: 'o'},
+].concat(generateCoinLine(11, 8, -0.5, 8, 3)),
+[
+    // squeeze top
+    { x: 2, y: 0, type: 'g'},
+    { x: 7, y: 4, type: 'c'},
+    { x: 8, y: 0, type: 'g'},
+    { x: 19, y: 3, type: 'c'},
+    // risky coins in between
+    { x: 3, y: 9, type: 'o'},
+    { x: 3, y: 10, type: 'o'},
+    { x: 4, y: 9, type: 'o'},
+    { x: 4, y: 10, type: '*'},
+    { x: 5, y: 9, type: 'o'},
+    { x: 5, y: 10, type: 'o'},
+    { x: 6, y: 9, type: 'o'},
+    { x: 6, y: 10, type: 'o'},
+    { x: 7, y: 9, type: '*'},
+    { x: 7, y: 10, type: '*'},
+    { x: 8, y: 9, type: 'o'},
+    { x: 8, y: 10, type: 'o'},
+    { x: 9, y: 9, type: 'o'},
+    { x: 9, y: 10, type: 'o'},
+    { x: 10, y: 9, type: 'o'},
+    { x: 10, y: 10, type: '*'},
+    { x: 11, y: 9, type: 'o'},
+    { x: 11, y: 10, type: 'o'},
+].concat(
+    generateCoinLine(5, 1, 0, 6, 2),
+    generateCoinLine(13, 1, 2, 5, 3),
+    generateCoinSquare(23, 14)),
+];
+
 // c -> cloud cactus
 // g -> ground cactus
 // o -> 1 coin
@@ -100,11 +177,11 @@ var spawnPatterns = [
         { x: 4, y: 10, type: '*'},
         { x: 5, y: 9, type: 'o'},
         { x: 5, y: 10, type: 'o'},
-        { x: 6, y: 9, type: 'o'},
+        { x: 6, y: 9, type: '*'},
         { x: 6, y: 10, type: 'o'},
         { x: 7, y: 9, type: '*'},
         { x: 7, y: 10, type: '*'},
-        { x: 8, y: 9, type: 'o'},
+        { x: 8, y: 9, type: '*'},
         { x: 8, y: 10, type: 'o'},
         { x: 9, y: 9, type: 'o'},
         { x: 9, y: 10, type: 'o'},

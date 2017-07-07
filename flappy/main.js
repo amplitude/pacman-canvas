@@ -23,7 +23,7 @@ const START_Y = 400;
 const MAX_X = 1200;
 const MAX_Y = 800;
 
-const GAME_VERSION = 'v0.6.5';
+const GAME_VERSION = 'v0.8.5';
 
 // pipe constants
 const pipeHeight = 50;
@@ -33,7 +33,8 @@ const holeSize = 4;
 const X_OFFSET_INCR = 50;
 const Y_OFFSET_INCR = 50;
 // cactus constants
-const groundCactusY = 520;
+const groundCactusY = 610;
+const groundCactusYHard = 545;
 
 const maxFuel = 500;
 
@@ -42,62 +43,149 @@ const VEHICLES = {
     BALLOON: 'BALLOON',
     SQUARE: 'SQUARE',
     PLANE: 'PLANE',
+    PLANE1: 'PLANE1',
+    PLANE2: 'PLANE2',
+    PLANE3: 'PLANE3',
+    ROCKET: 'ROCKET', // only for analytics
+    ROCKET1: 'ROCKET1',
+    ROCKET2: 'ROCKET2',
+    ROCKET3: 'ROCKET3',
 };
 
-const VEHICLE_LIST = [VEHICLES.BALLOON, VEHICLES.SQUARE, VEHICLES.PLANE];
+const VEHICLE_TO_BASE_VEHICLE = {
+    BALLOON: 'BALLOON',
+    SQUARE: 'SQUARE',
+    PLANE: 'PLANE',
+    PLANE1: 'PLANE',
+    PLANE2: 'PLANE',
+    PLANE3: 'PLANE',
+    ROCKET: 'ROCKET', // only for analytics
+    ROCKET1: 'ROCKET',
+    ROCKET2: 'ROCKET',
+    ROCKET3: 'ROCKET',
+};
+
+const IS_SPRITE_SHEET = {
+    BALLOON: false,
+    SQUARE: false,
+    PLANE: false,
+    PLANE1: true,
+    PLANE2: true,
+    PLANE3: true,
+    ROCKET: false, // only for analytics
+    ROCKET1: true,
+    ROCKET2: true,
+    ROCKET3: true,
+};
+
+const VEHICLE_LIST = [
+    VEHICLES.BALLOON, VEHICLES.SQUARE,
+    VEHICLES.PLANE1, VEHICLES.PLANE2, VEHICLES.PLANE3,
+    VEHICLES.ROCKET3, VEHICLES.ROCKET2, VEHICLES.ROCKET1,
+];
 
 const STAGES = {
     'DESERT': 'desert',
+    'SKY': 'sky',
+    'SPACE': 'space',
 };
-const STAGE_LIST = [STAGES.DESERT];
+const STAGE_LIST = [STAGES.DESERT, STAGES.SKY, STAGES.SPACE];
+const stageToBackgroundLength = {
+    [STAGES.DESERT]: 2173,
+    [STAGES.SKY]: 2560,
+    [STAGES.SPACE]: 2560,
+};
 
 // mapping to sprite file names
 const SPRITES = {
-    BALLOON: 'balloon',
-    SQUARE: 'bird',
+    [VEHICLES.BALLOON]: 'balloon',
+    [VEHICLES.SQUARE]: 'bird',
     PIPE: 'pipe',
-    PLANE: 'plane',
-    BACKGROUND: 'bg',
+    [VEHICLES.PLANE]: 'plane',
     COIN_1: '1coin',
     COIN_A: '5coin',
     SKY_CACTUS: 'cloud-cactus',
     EARTH_CACTUS: 'ground-cactus',
+    SAND_ISLAND: 'sand-island',
+    SPACE_ROCKS: 'space-obstacle',
+    PLANET_SKY: 'planet1',
+    PLANET_EARTH: 'planet2',
+};
+
+const OBSTACLE_SPRITES = {
+    [STAGES.DESERT]: {
+        CLOUD: SPRITES.SKY_CACTUS,
+        ROCK: SPRITES.EARTH_CACTUS,
+        LONG: SPRITES.SAND_ISLAND,
+    },
+    [STAGES.SKY]: {
+        CLOUD: SPRITES.SKY_CACTUS,
+        ROCK: SPRITES.EARTH_CACTUS,
+        LONG: SPRITES.SAND_ISLAND,
+    },
+    [STAGES.SPACE]: {
+        CLOUD: SPRITES.PLANET_SKY,
+        ROCK: SPRITES.PLANET_EARTH,
+        LONG: SPRITES.SPACE_ROCKS,
+    },
+}
+
+const BACKGROUNDS = {
+    [STAGES.DESERT]: 'desert_bg',
+    [STAGES.SKY]: 'sky_bg',
+    [STAGES.SPACE]: 'space_bg',
 };
 
 const SPRITE_SHEETS = {
-    // TODO get real assets
+    [VEHICLES.PLANE1]: 'plane1',
+    [VEHICLES.PLANE2]: 'plane2',
+    [VEHICLES.PLANE3]: 'plane3',
+    [VEHICLES.ROCKET1]: 'ship1',
+    [VEHICLES.ROCKET2]: 'ship2',
+    [VEHICLES.ROCKET3]: 'ship3',
     BUTTON_SHEET: 'button',
 };
 
 const SHEET_DIMENSIONS = {
     [SPRITE_SHEETS.BUTTON_SHEET]: [50, 50],
+    [SPRITE_SHEETS[VEHICLES.PLANE1]]: [100, 100],
+    [SPRITE_SHEETS[VEHICLES.PLANE2]]: [100, 100],
+    [SPRITE_SHEETS[VEHICLES.PLANE3]]: [100, 100],
+    [SPRITE_SHEETS[VEHICLES.ROCKET1]]: [250, 200],
+    [SPRITE_SHEETS[VEHICLES.ROCKET2]]: [250, 200],
+    [SPRITE_SHEETS[VEHICLES.ROCKET3]]: [250, 200],
 };
 
 const BUTTON_SHEET_HEIGHT = 50;
 const BUTTON_SHEET_WIDTH = 50;
+
 // controls falling of main sprite
 const vehicleToGravity = {
     [VEHICLES.BALLOON]: 600,
     [VEHICLES.SQUARE]: 1500,
     [VEHICLES.PLANE]: 1500,
+    [VEHICLES.ROCKET]: 1300,
 };
 
 const vehicleVelocityToAngleRatio = {
     [VEHICLES.BALLOON]: 1000,
     [VEHICLES.SQUARE]: 50,
     [VEHICLES.PLANE]: 50,
+    [VEHICLES.ROCKET]: 30,
 };
 const vehicleAngleOffset = {
     [VEHICLES.BALLOON]: 0,
     [VEHICLES.SQUARE]: 0,
-    [VEHICLES.PLANE]: -20,
+    [VEHICLES.PLANE]: 70,
+    [VEHICLES.ROCKET]: 0,
 }
 
 // x, y, xoffset, y offset
 const vehicleToBodyModifier = {
     [VEHICLES.BALLOON]: [80, 170, 10, 10],
     [VEHICLES.SQUARE]: [50, 50, 0, 0],
-    [VEHICLES.PLANE]: [80, 60, 20, 30],
+    [VEHICLES.PLANE]: [80, 70, 10, 20],
+    [VEHICLES.ROCKET]: [200, 130, 25, 35], // these get halved
 };
 
 // controls speed of scrolling
@@ -105,12 +193,14 @@ const vehicleToSpeed = {
     [VEHICLES.BALLOON]: -200,
     [VEHICLES.SQUARE]: -300,
     [VEHICLES.PLANE]: -300,
+    [VEHICLES.ROCKET]: -350,
 };
 
 const vehicleToObstacleTimeout = {
     [VEHICLES.BALLOON]: 7500,
     [VEHICLES.SQUARE]: 5000,
     [VEHICLES.PLANE]: 5000,
+    [VEHICLES.ROCKET]: 4500,
 };
 
 // controls change in velocity from pressing space
@@ -118,37 +208,61 @@ const vehicleToVelocityDelta = {
     [VEHICLES.BALLOON]: 200,
     [VEHICLES.SQUARE]: 475,
     [VEHICLES.PLANE]: 475,
+    [VEHICLES.ROCKET]: 200,
 };
 const vehicleToFuelDrainMillis = {
     [VEHICLES.BALLOON]: 60,
     [VEHICLES.SQUARE]: 40,
     [VEHICLES.PLANE]: 40,
+    [VEHICLES.ROCKET]: 60,
 }
 
 const vehicleToAnalyticsName = {
     [VEHICLES.BALLOON]: 'balloon',
     [VEHICLES.SQUARE]: 'glitch',
     [VEHICLES.PLANE]: 'paper plane',
+    [VEHICLES.ROCKET]: 'rocket',
+    [VEHICLES.PLANE1]: 'paper plane (standard)',
+    [VEHICLES.PLANE2]: 'paper plane (green)',
+    [VEHICLES.PLANE3]: 'paper plane (purple)',
+    [VEHICLES.ROCKET1]: 'rocket (strawberry)',
+    [VEHICLES.ROCKET2]: 'rocket (cream)',
+    [VEHICLES.ROCKET3]: 'rocket (standard)',
 };
 
 const vehicleToScoreName = {
     [VEHICLES.BALLOON]: 'Hot Air Balloon',
     [VEHICLES.SQUARE]: 'Abstract Art',
     [VEHICLES.PLANE]: 'Paper Airplane',
+    [VEHICLES.ROCKET]: 'Space Ship',
+    [VEHICLES.PLANE1]: 'Paper Airplane (Standard)',
+    [VEHICLES.PLANE2]: 'Paper Airplane (Green)',
+    [VEHICLES.PLANE3]: 'Paper Airplane (Purple)',
+    [VEHICLES.ROCKET1]: 'Space Ship (Strawberry)',
+    [VEHICLES.ROCKET2]: 'Space Ship (Cream)',
+    [VEHICLES.ROCKET3]: 'Space Ship (Standard)',
 };
 
 const stageToAnalyticsName = {
     [STAGES.DESERT]: 'desert',
+    [STAGES.SKY]: 'sky',
+    [STAGES.SPACE]: 'space',
 };
 
 const stageToScoreName = {
     [STAGES.DESERT]: 'Dusty Desert',
+    [STAGES.SKY]: 'Soaring Skies',
+    [STAGES.SPACE]: 'Asteroid Belt',
 };
 
 const preloadSprites = function preloadSprites() {
     Object.keys(SPRITES).forEach(key => {
         game.load.image(SPRITES[key], 'assets/' + SPRITES[key] + '.png');
     });
+
+    Object.keys(BACKGROUNDS).forEach(key => {
+        game.load.image(BACKGROUNDS[key], 'assets/backgrounds/' + BACKGROUNDS[key] + '.png');
+    })
 
     Object.keys(SPRITE_SHEETS).forEach(key => {
         const val = SPRITE_SHEETS[key];
@@ -159,10 +273,18 @@ const preloadSprites = function preloadSprites() {
 
 let localHighScore = 0;
 let userName = '';
-let vehicleIndex = 0;
-let vehicleType = VEHICLES.BALLOON;
+
+// randomly select a vehicle
+let vehicleIndex = Math.floor(Math.random() *  VEHICLE_LIST.length);
+let vehicleType = VEHICLE_LIST[vehicleIndex];
+let baseVehicleType = VEHICLE_TO_BASE_VEHICLE[vehicleType];
+// let vehicleIndex = 0;
+// let vehicleType = VEHICLES.BALLOON;
+// let baseVehicleType = VEHICLES.BALLOON;
+let selectedStageIndex = 0;
 let selectedStage = STAGES.DESERT;
-let DEBUG = true;
+let DEBUG = false;
+let EASY_MODE = true;
 
 function isValidEmail(email) {
     var re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
@@ -173,19 +295,22 @@ function logHighscore(score, duration, vehicle, stage) {
     const lastScore = localHighScore;
     localHighScore = Math.max(localHighScore, score);
 
-    base('Data Explorer Scores').create({
+    const table = EASY_MODE ? base('Data Explorer Scores') : base('Data Explorer Scores (Hard)');
+    table.create({
         'name': userName,
         'score': score,
         'vehicle': vehicleToScoreName[vehicle],
         'survival time': duration,
         'stage': stageToScoreName[stage],
+        'version': GAME_VERSION,
+        'hitboxes showing': DEBUG,
     }, function (err, record) {
         if (err) {
             console.log(err);
             return;
         }
         console.log('Highscore added');
-    })
+    });
 
     return score > lastScore;
 };
@@ -198,7 +323,7 @@ function addSinglePipe(y, obstacleGroup, data) {
 
     // enable physics
     game.physics.arcade.enable(pipe);
-    pipe.body.velocity.x = vehicleToSpeed[vehicleType];
+    pipe.body.velocity.x = vehicleToSpeed[baseVehicleType];
 
     // clean up pipe when not visible
     pipe.checkWorldBounds = true;
@@ -225,6 +350,9 @@ function addPipeColumn(obstacleGroup) {
         }
     }
 };
+function addBackground() {
+    return game.add.tileSprite(0, 0, stageToBackgroundLength[selectedStage], MAX_Y, BACKGROUNDS[selectedStage]);
+}
 
 var bootState = {
     create: function() {
@@ -253,7 +381,6 @@ var loadState = {
 
 // enter name screen
 var loginState = {
-    // TODO
     create: function() {
         amplitude.getInstance().regenerateDeviceId();
         var identify = new amplitude.Identify().set('version', GAME_VERSION);
@@ -269,6 +396,7 @@ var loginState = {
         this.userInput = game.add.inputField(MAX_X / 2 - 200, 200, {
             blockInput: false,
             font: '18px Arial',
+            forceCase: PhaserInput.ForceCase.lower,
             fill: '#212121',
             width: 400,
             max: 40,
@@ -303,11 +431,10 @@ var loginState = {
     },
 
     onSubmit: function() {
-        this.onSetUserName(this.userInput.value);
+        this.onSetUserName(this.userInput.value.trim());
     },
 
     onSetUserName: function(name) {
-        // TODO validation
         if (isValidEmail(name)) {
             amplitude.getInstance().setUserId(name);
             var identify = new amplitude.Identify().set('version', GAME_VERSION);
@@ -325,7 +452,14 @@ var loginState = {
 // screen to select a vehicle
 var menuState = {
     create: function() {
-        this.background = game.add.tileSprite(0, 0, 2171, MAX_Y, SPRITES.BACKGROUND);
+        this.backgrounds = STAGE_LIST.map(stage => {
+            background = game.add.tileSprite(0, 0, stageToBackgroundLength[stage], MAX_Y, BACKGROUNDS[stage]);
+            background.stageType = stage;
+            return background
+        });
+        this.backgrounds.forEach((background) => {
+            background.visible = background.stageType === selectedStage;
+        });
 
         // Title instructions
         const titleLabel = game.add.text(
@@ -334,7 +468,7 @@ var menuState = {
             'Data Explorer',
             {
                 font: '40px Arial',
-                fill: '#eeeeee',
+                fill: '#ffffff',
             });
         // instructions
         const instructions = game.add.text(
@@ -343,56 +477,138 @@ var menuState = {
             'Help Datamonster soar through the skies!\nTap or hold space to fly higher.',
             {
                 font: '25px Arial',
-                fill: '#eeeeee',
+                fill: '#ffffff',
             });
-
-        // randomly select a vehicle
-        // vehicleIndex = Math.floor(Math.random() *  VEHICLE_LIST.length);
-        vehicleType = VEHICLE_LIST[vehicleIndex];
 
         // logic for selecting vehicle
         this.vehicles = VEHICLE_LIST.map(vehicle => {
             const modifier = vehicleToBodyModifier[vehicle];
-            const sprite = game.add.sprite(START_X, START_Y, SPRITES[vehicle]);
+            let sprite;
+            if (IS_SPRITE_SHEET[vehicle]) {
+                sprite = game.add.sprite(START_X, START_Y, SPRITE_SHEETS[vehicle], 0);
+            } else {
+                sprite = game.add.sprite(START_X, START_Y, SPRITES[vehicle]);
+            }
             sprite.anchor.setTo(0.5, 0.5);
-            sprite.angle = vehicleAngleOffset[vehicle]
+
+            if (VEHICLE_TO_BASE_VEHICLE[vehicle] === VEHICLES.ROCKET) {
+                // scale down
+                sprite.scale.setTo(0.5, 0.5);
+            }
+            sprite.angle = vehicleAngleOffset[VEHICLE_TO_BASE_VEHICLE[vehicle]]
             sprite.vehicleType = vehicle;
             return sprite;
         });
 
         this.vehicles.forEach((vehicleSprite) => {
-            vehicleSprite.visible = vehicleSprite.vehicleType === vehicleType
+            vehicleSprite.visible = vehicleSprite.vehicleType === vehicleType;
         });
+
+        // HITBOX TOGGLE
+        const hitBoxLabel = game.add.text(MAX_X - 170, MAX_Y - 140, 'Show Hitboxes:',  {
+            font: '24px Arial',
+            fill: '#ffffff',
+        });
+        hitBoxLabel.anchor.set(0.5, 0.5);
+        const hitBoxButton = game.add.button(MAX_X - 50, MAX_Y - 140, 'button', this.toggleDebug, this, 0, 0, 0);
+        hitBoxButton.anchor.set(0.5, 0.5);
+        this.hitBoxButtonLabel = game.add.text(MAX_X - 50, MAX_Y - 136, DEBUG ? 'ON' : 'OFF', {
+            font: '16px Arial',
+            fill: '#ffffff',
+        });
+        this.hitBoxButtonLabel.anchor.set(0.5, 0.5);
+
+        // DIFFICULTY TOGGLE
+        const difficultyLabel = game.add.text(MAX_X - 140, MAX_Y - 50, 'Difficulty:',  {
+            font: '24px Arial',
+            fill: '#ffffff',
+        });
+        difficultyLabel.anchor.set(0.5, 0.5);
+        const hardButton = game.add.button(MAX_X - 50, MAX_Y - 50, 'button', this.toggleDifficulty, this, 0, 0, 0);
+        hardButton.anchor.set(0.5, 0.5);
+        this.hardButtonLabel = game.add.text(MAX_X - 50, MAX_Y - 45, EASY_MODE ? 'Easy' : 'Hard', {
+            font: '16px Arial',
+            fill: '#ffffff',
+        });
+        this.hardButtonLabel.anchor.set(0.5, 0.5);
 
         // start instructions
         const startLabel = game.add.text(
             80,
-            MAX_Y - 120,
-            'Use Left and Right to select a vehicle\nPress Space to start!',
+            MAX_Y - 140,
+            'Use the Up and Down arrows to change stages\nUse the Left and Right arrows to select a vehicle\nPress Space to start!',
             {
                 font: '25px Arial',
-                fill: '#eeeeee',
+                fill: '#ffffff',
             });
+
+        const bestLabel = game.add.text(MAX_X - 220, 20, 'Best Score: ' + localHighScore, { font: '25px Arial', fill: '#ffffff'});
 
         this.leftArrow = game.input.keyboard.addKey(Phaser.Keyboard.LEFT);
         this.rightArrow = game.input.keyboard.addKey(Phaser.Keyboard.RIGHT);
+        this.upArrow = game.input.keyboard.addKey(Phaser.Keyboard.UP);
+        this.downArrow = game.input.keyboard.addKey(Phaser.Keyboard.DOWN);
         this.spaceKey = game.input.keyboard.addKey(Phaser.Keyboard.SPACEBAR);
 
         this.leftArrow.onDown.add(this.onLeft, this);
-        this.rightArrow.onDown.add(this.onLeft, this);
+        this.rightArrow.onDown.add(this.onRight, this);
+        this.upArrow.onDown.add(this.onUp, this);
+        this.downArrow.onDown.add(this.onDown, this);
         this.spaceKey.onDown.addOnce(this.start, this);
-
     },
     start: function () {
-        var identify = new amplitude.Identify().set('vehicle', vehicleType).set('stage', selectedStage);
+        var identify = new amplitude.Identify().set('vehicle', vehicleToAnalyticsName[vehicleType]).set('stage', selectedStage).set('vehicle class', vehicleToAnalyticsName[baseVehicleType]);
         amplitude.getInstance().identify(identify);
-        amplitude.getInstance().logEvent('Game Started');
+        amplitude.getInstance().logEvent('Game Started', { difficulty: EASY_MODE ? 'easy' : 'hard' });
         game.state.start('play');
     },
     update: function() {
-        this.vehicles.forEach((vehicleSprite) => {
-            vehicleSprite.visible = vehicleSprite.vehicleType === vehicleType
+        this.backgrounds.forEach((background) => {
+            background.visible = background.stageType === selectedStage;
         });
+        this.vehicles.forEach((vehicleSprite) => {
+            vehicleSprite.visible = vehicleSprite.vehicleType === vehicleType;
+        });
+    },
+    toggleDifficulty: function() {
+        EASY_MODE = !EASY_MODE;
+        this.hardButtonLabel.text = EASY_MODE ? 'Easy' : 'Hard';
+
+        amplitude.getInstance().logEvent('Difficulty Changed', { difficulty: EASY_MODE ? 'easy' : 'hard' });
+    },
+    toggleDebug: function() {
+        DEBUG = !DEBUG;
+        this.hitBoxButtonLabel.text = DEBUG ? 'ON' : 'OFF';
+
+        amplitude.getInstance().logEvent('Toggle Hit Boxes', { hitboxes: DEBUG })
+    },
+    onUp: function() {
+        const lastStage = selectedStage;
+        selectedStageIndex = (selectedStageIndex + 1) % STAGE_LIST.length;
+        selectedStage = STAGE_LIST[selectedStageIndex];
+
+        const eventProperties = {
+            direction: 'up',
+            lastStage: stageToAnalyticsName[lastStage],
+            stage: stageToAnalyticsName[selectedStage],
+        };
+        amplitude.getInstance().logEvent('Cycle Stage', eventProperties);
+    },
+    onDown: function() {
+        const lastStage = selectedStage;
+
+        selectedStageIndex -= 1;
+        if (selectedStageIndex < 0) {
+            selectedStageIndex += STAGE_LIST.length;
+        }
+        selectedStage = STAGE_LIST[selectedStageIndex];
+
+        const eventProperties = {
+            direction: 'down',
+            lastStage: stageToAnalyticsName[lastStage],
+            stage: stageToAnalyticsName[selectedStage],
+        };
+        amplitude.getInstance().logEvent('Cycle Stage', eventProperties);
     },
     onLeft: function() {
         const lastType = vehicleType;
@@ -402,6 +618,7 @@ var menuState = {
             vehicleIndex += VEHICLE_LIST.length;
         }
         vehicleType = VEHICLE_LIST[vehicleIndex];
+        baseVehicleType = VEHICLE_TO_BASE_VEHICLE[vehicleType];
 
         const eventProperties = {
             direction: 'left',
@@ -415,9 +632,10 @@ var menuState = {
 
         vehicleIndex = (vehicleIndex + 1) % VEHICLE_LIST.length;
         vehicleType = VEHICLE_LIST[vehicleIndex];
+        baseVehicleType = VEHICLE_TO_BASE_VEHICLE[vehicleType];
 
         const eventProperties = {
-            direction: 'left',
+            direction: 'right',
             lastVehicle: vehicleToAnalyticsName[lastType],
             vehicle: vehicleToAnalyticsName[vehicleType],
         };
@@ -430,10 +648,16 @@ var playState = {
     // set up the game, display sprites, etc.
     create: function() {
         // SETUP ENTITIES
-        this.background = game.add.tileSprite(0, 0, 2171, MAX_Y, SPRITES.BACKGROUND);
+        this.background = addBackground();
 
         // start vehicle at start of screen
-        this.vehicle = game.add.sprite(START_X, START_Y, SPRITES[vehicleType]);
+
+        if (IS_SPRITE_SHEET[vehicleType]) {
+            this.vehicle = game.add.sprite(START_X, START_Y, SPRITE_SHEETS[vehicleType], 0);
+        } else {
+            this.vehicle = game.add.sprite(START_X, START_Y, SPRITES[vehicleType]);
+        }
+
         this.vehicle.ampData = {
             vehicle: vehicleToAnalyticsName[vehicleType],
         };
@@ -441,9 +665,13 @@ var playState = {
         // Add physics to the vehicle, needed for: movements, gravity, collisions, etc.
         game.physics.arcade.enable(this.vehicle);
         // Add gravity to the vehicle to make it fall
-        this.vehicle.body.gravity.y = vehicleToGravity[vehicleType];
+        this.vehicle.body.gravity.y = vehicleToGravity[baseVehicleType];
         this.vehicle.anchor.setTo(0.5, 0.5);
-        const bodyModifier = vehicleToBodyModifier[vehicleType];
+        if (baseVehicleType === VEHICLES.ROCKET) {
+            // scale down
+            this.vehicle.scale.setTo(0.5, 0.5);
+        }
+        const bodyModifier = vehicleToBodyModifier[baseVehicleType];
         if (bodyModifier) {
             this.vehicle.body.setSize(bodyModifier[0], bodyModifier[1], bodyModifier[2], bodyModifier[3]);
         }
@@ -464,9 +692,11 @@ var playState = {
         this.currentFuel = maxFuel;
         this.fuelLabel = game.add.text(20, MAX_Y - 80, "Fuel: " + maxFuel + "/" + maxFuel, { font: "30px Arial", fill: "#ffffff" });
 
+        this.bestLabel = game.add.text(MAX_X - 220, 20, 'Best Score: ' + localHighScore, { font: '25px Arial', fill: '#ffffff'});
+
         // create objects
         this.spawnObjects();
-        this.obstacleTimer = game.time.events.loop(vehicleToObstacleTimeout[vehicleType], this.spawnObjects, this);
+        this.obstacleTimer = game.time.events.loop(vehicleToObstacleTimeout[baseVehicleType], this.spawnObjects, this);
 
         this.canRestart = false;
         this.score = 0;
@@ -477,6 +707,7 @@ var playState = {
         this.spaceCount = 0;
         this.skyCactusCount = 0;
         this.groundCactusCount = 0;
+        this.barCount = 0;
         this.coinCount = 0;
         this.bigCoinCount = 0;
     },
@@ -489,7 +720,7 @@ var playState = {
             // if the vehicle hits the top, bounce off
             if (this.vehicle.y < 0) {
                 // bounce off the wall
-                this.vehicle.body.velocity.y = Math.max(Math.abs(this.vehicle.body.velocity.y) / 2, vehicleToVelocityDelta[vehicleType] / 2);
+                this.vehicle.body.velocity.y = Math.max(Math.abs(this.vehicle.body.velocity.y) / 2, vehicleToVelocityDelta[baseVehicleType] / 2);
             }
             // If the vehicle is hit the bottom
             // Call the 'restartGame' function
@@ -513,13 +744,23 @@ var playState = {
         }
 
         if (this.spaceKey.isDown && this.vehicle.alive && this.currentFuel > 0) {
-            this.vehicle.body.acceleration.y = -vehicleToGravity[vehicleType] - vehicleToVelocityDelta[vehicleType] * 2;
+            let acceleration = vehicleToVelocityDelta[baseVehicleType] * 2;
+            if (baseVehicleType === VEHICLES.ROCKET) {
+                acceleration = vehicleToGravity[baseVehicleType];
+            }
+            this.vehicle.body.acceleration.y = -vehicleToGravity[baseVehicleType] - acceleration;
             if (game.time.now > this.fuelTime) {
                 this.currentFuel -= 1;
-                this.fuelTime = game.time.now + vehicleToFuelDrainMillis[vehicleType];
+                this.fuelTime = game.time.now + vehicleToFuelDrainMillis[baseVehicleType];
+            }
+            if (IS_SPRITE_SHEET[vehicleType]) {
+                this.vehicle.frame = 1;
             }
         } else {
             this.vehicle.body.acceleration.y = 0;
+            if (IS_SPRITE_SHEET[vehicleType]) {
+                this.vehicle.frame = 0;
+            }
         }
         this.fuelLabel.text = "Fuel: " + this.currentFuel + "/" + maxFuel;
 
@@ -535,14 +776,13 @@ var playState = {
         });
 
         // update angle based on velocity
-        this.vehicle.angle = vehicleAngleOffset[vehicleType] + (this.vehicle.body.velocity.y / vehicleVelocityToAngleRatio[vehicleType]);
+        this.vehicle.angle = vehicleAngleOffset[baseVehicleType] + (this.vehicle.body.velocity.y / vehicleVelocityToAngleRatio[baseVehicleType]);
     },
 
     // debugging
     render: function() {
         if (DEBUG) {
-            // game.debug.bodyInfo(this.vehicle, 32, 32);
-
+            game.debug.bodyInfo(this.vehicle, 32, 32);
             game.debug.body(this.vehicle);
             this.obstacles.forEach((obstacle) => game.debug.body(obstacle));
         }
@@ -552,7 +792,7 @@ var playState = {
         // enable physics
         game.physics.arcade.enable(sprite);
         // move sprite
-        sprite.body.velocity.x = vehicleToSpeed[vehicleType];
+        sprite.body.velocity.x = vehicleToSpeed[baseVehicleType];
         // clean up sprite when not visible
         sprite.checkWorldBounds = true;
         sprite.outOfBoundsKill = true;
@@ -561,24 +801,42 @@ var playState = {
     addPipes: function() {
         addPipeColumn(this.obstacles);
     },
-    addSkyCactus: function(xOffset, yOffset) {
-        const cactus = game.add.sprite(MAX_X + xOffset, yOffset, SPRITES.SKY_CACTUS);
-        this.obstacles.add(cactus);
-        this.initSprite(cactus);
+    addBar: function(xOffset, yOffset) {
+        const bar = game.add.sprite(MAX_X + xOffset, yOffset, OBSTACLE_SPRITES[selectedStage].LONG);
+        this.obstacles.add(bar);
+        this.initSprite(bar);
 
-        cactus.body.setSize(200, 220, 25, 20);
-        cactus.ampData = {
+        bar.body.setSize(400, 50, 0, 0)
+        bar.ampData = {
+            type: 'long bar',
+            marked: false,
+        }
+    },
+    addCloud: function(xOffset, yOffset) {
+        const cloud = game.add.sprite(MAX_X + xOffset, yOffset, OBSTACLE_SPRITES[selectedStage].CLOUD);
+        this.obstacles.add(cloud);
+        this.initSprite(cloud);
+
+        cloud.body.setSize(184, 184, 8, 8);
+        if (!EASY_MODE) {
+            cloud.scale.setTo(1.2, 1.2);
+        }
+        cloud.ampData = {
             type: 'large floating object',
             marked: false,
         }
     },
-    addGroundCactus: function(xOffset, yOffset) {
-        const cactus = game.add.sprite(MAX_X + xOffset, groundCactusY + yOffset, SPRITES.EARTH_CACTUS);
-        this.obstacles.add(cactus);
-        this.initSprite(cactus);
+    addRock: function(xOffset, yOffset) {
+        const yBase = EASY_MODE ? groundCactusY : groundCactusYHard;
+        const rock = game.add.sprite(MAX_X + xOffset, yBase + yOffset, OBSTACLE_SPRITES[selectedStage].ROCK);
+        this.obstacles.add(rock);
+        this.initSprite(rock);
 
-        cactus.body.setSize(200, 200, 25, 40);
-        cactus.ampData = {
+        rock.body.setSize(164, 164, 8, 8);
+        if (!EASY_MODE) {
+            rock.scale.setTo(1.3, 1.3);
+        }
+        rock.ampData = {
             type: 'large grounded object',
             marked: false,
         }
@@ -611,10 +869,13 @@ var playState = {
             const yOffset = patternObj.y * Y_OFFSET_INCR;
             switch (patternObj.type) {
                 case 'c':
-                    this.addSkyCactus(xOffset, yOffset);
+                    this.addCloud(xOffset, yOffset);
                     break;
                 case 'g':
-                    this.addGroundCactus(xOffset, 0);
+                    this.addRock(xOffset, 0);
+                    break;
+                case '_':
+                    this.addBar(xOffset, yOffset);
                     break;
                 case 'o':
                     this.addCoin1(xOffset, yOffset);
@@ -629,19 +890,25 @@ var playState = {
     },
     // helper functions
     spawnObjects: function() {
-        const patternIdx = Math.floor(Math.random() * spawnPatterns.length);
-        // spawn patterns defined in external file
-        this.renderPattern(spawnPatterns[patternIdx]);
+        if (EASY_MODE) {
+            const patternIdx = Math.floor(Math.random() * easySpawnPatterns.length);
+            // spawn patterns defined in external file
+            this.renderPattern(easySpawnPatterns[patternIdx]);
+        } else {
+            const patternIdx = Math.floor(Math.random() * spawnPatterns.length);
+            // spawn patterns defined in external file
+            this.renderPattern(spawnPatterns[patternIdx]);
+        }
     },
 
     onSpace: function() {
         // Make the vehicle jump
         if (this.vehicle.alive && this.currentFuel > 0) {
             // Add a vertical velocity to the vehicle
-            this.vehicle.body.velocity.y -= vehicleToVelocityDelta[vehicleType];
+            this.vehicle.body.velocity.y -= vehicleToVelocityDelta[baseVehicleType];
             this.spaceCount += 1;
             this.currentFuel -= 1;
-            this.fuelTime = game.time.now + vehicleToFuelDrainMillis[vehicleType];
+            this.fuelTime = game.time.now + vehicleToFuelDrainMillis[baseVehicleType];
         } else {
             // Start the 'main' state, which restarts the game
             if (this.canRestart) {
@@ -652,6 +919,10 @@ var playState = {
     onCollectCoin: function(coinSprite) {
         this.score += coinSprite.ampData.value;
         this.labelScore.text = 'Score: ' + this.score;
+        if (this.score > localHighScore) {
+            localHighScore = this.score;
+            this.bestLabel.text = 'Best Score: ' + localHighScore;
+        }
         this.maybeMarkCoin(coinSprite);
         const eventProperties = this.getAnalyticsEventProperties();
         eventProperties['type'] = coinSprite.ampData.type;
@@ -679,7 +950,7 @@ var playState = {
             'Game Over...',
             {
                 font: '40px Arial',
-                fill: '#111111',
+                fill: '#ff1111',
             });
 
         // analytics + leaderboard
@@ -707,8 +978,10 @@ var playState = {
     },
     maybeMarkObstacle: function(obstacle) {
         if (!obstacle.ampData.marked) {
-            if (obstacle.ampData.type === 'grounded cactus') {
+            if (obstacle.ampData.type === 'large grounded object') {
                 this.groundCactusCount += 1;
+            } else if (obstacle.ampData.type === 'long bar') {
+                this.barCount += 1;
             } else {
                 this.skyCactusCount += 1;
             }
@@ -717,16 +990,18 @@ var playState = {
     },
     getAnalyticsEventProperties: function() {
         return {
-            score: this.score,
+            'score': this.score,
             'fuel left': this.currentFuel,
             'fuel fraction': this.currentFuel / maxFuel,
             'duration': Math.floor((game.time.now - this.startTime) / 1000),
             'large ground obstacle count': this.groundCactusCount,
             'large air obstacle count': this.skyCactusCount,
+            'long bar obstacle count': this.barCount,
             'coin count': this.coinCount,
             'amplitude coin count': this.bigCoinCount,
             'spacebar down count': this.spaceCount,
-            'debug mode': DEBUG,
+            'hitboxes on': DEBUG,
+            'difficulty': EASY_MODE ? 'easy' : 'hard',
         };
     }
 };
