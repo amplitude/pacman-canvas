@@ -122,6 +122,10 @@ const SPRITES = {
     PLANET_SKY: 'planet1',
     PLANET_EARTH: 'planet2',
     LONG_ISLAND: 'floating-island',
+    RAINBOW_ISLAND: 'rainbow-island',
+    AIR_ROCK: 'rock-cluster',
+    INSTRUCTIONS: 'instruction',
+    SPLASH: 'data-explorer-splash',
 };
 
 const OBSTACLE_SPRITES = {
@@ -131,8 +135,8 @@ const OBSTACLE_SPRITES = {
         LONG: SPRITES.SAND_ISLAND,
     },
     [STAGES.SKY]: {
-        CLOUD: SPRITES.SKY_CACTUS,
-        ROCK: SPRITES.EARTH_CACTUS,
+        CLOUD: SPRITES.RAINBOW_ISLAND,
+        ROCK: SPRITES.AIR_ROCK,
         LONG: SPRITES.LONG_ISLAND,
     },
     [STAGES.SPACE]: {
@@ -399,7 +403,7 @@ var loadState = {
         // could put up a loading screen here
         preloadSprites();
         // Change the background color of the game to blue
-        game.stage.backgroundColor = '#71c5cf';
+        game.stage.backgroundColor = '#22BCE2';
     },
     create: function() {
         game.state.start('login');
@@ -414,13 +418,17 @@ var loginState = {
         amplitude.getInstance().identify(identify);
         userName = '';
 
-        const loginPrompt = game.add.text(MAX_X / 2, 100, 'Please enter your email', {
+        const splash = game.add.sprite(MAX_X / 2, -80, SPRITES.SPLASH);
+        splash.anchor.setTo(0.5, 0);
+        splash.scale.setTo(0.8, 0.8)
+
+        const loginPrompt = game.add.text(MAX_X /2, MAX_Y - 220, 'Please enter your email and click Start to continue', {
             font: '30px Arial',
             fill: '#ffffff',
         });
         loginPrompt.anchor.set(0.5);
 
-        this.userInput = game.add.inputField(MAX_X / 2 - 200, 200, {
+        this.userInput = game.add.inputField(MAX_X / 2 - 200, MAX_Y - 170, {
             blockInput: false,
             font: '18px Arial',
             forceCase: PhaserInput.ForceCase.lower,
@@ -437,19 +445,14 @@ var loginState = {
         this.userInput.startFocus();
 
 
-        const submitButton = game.add.button(MAX_X / 2, MAX_Y / 2, SPRITE_SHEETS.START_BUTTON, this.onSubmit, this, 0, 1, 2);
+        const submitButton = game.add.button(MAX_X / 2, MAX_Y - 80, SPRITE_SHEETS.START_BUTTON, this.onSubmit, this, 0, 1, 2);
         submitButton.anchor.set(0.5, 0.5);
-        const submitButtonLabel = game.add.text(MAX_X / 2, MAX_Y / 2 + 100, 'Click Start to Continue', {
-            font: '24px Arial',
-            fill: '#ffffff',
-        });
-        submitButtonLabel.anchor.set(0.5, 0.5);
 
 
         this.enterKey = game.input.keyboard.addKey(Phaser.Keyboard.ENTER);
         this.enterKey.onDown.add(this.onSubmit, this);
 
-        this.invalidEmail = game.add.text(MAX_X / 2, MAX_Y - 100, 'Invalid Email', {
+        this.invalidEmail = game.add.text(MAX_X / 2 + 320, MAX_Y - 150, 'Invalid Email', {
             font: '30px Arial',
             fill: '#ff0000',
         });
@@ -466,10 +469,16 @@ var loginState = {
             amplitude.getInstance().setUserId(name);
             var identify = new amplitude.Identify().set('version', GAME_VERSION);
             amplitude.getInstance().identify(identify);
+
             userName = name;
+
+            amplitude.getInstance().logEvent('User Logged In');
+
             game.state.start('menu');
         } else {
             this.invalidEmail.visible = true;
+
+            amplitude.getInstance().logEvent('Invalid Email');
 
             this.userInput.startFocus();
         }
@@ -562,15 +571,16 @@ var menuState = {
         });
         this.hardButtonLabel.anchor.set(0.5, 0.5);
 
-        // start instructions
-        const startLabel = game.add.text(
-            80,
-            MAX_Y - 140,
-            'Use the Up and Down arrows to change stages\nUse the Left and Right arrows to select a vehicle\nPress Space to start!',
-            {
-                font: '25px Arial',
-                fill: '#ffffff',
-            });
+        game.add.sprite(0, 0, SPRITES.INSTRUCTIONS);
+        // // start instructions
+        // const startLabel = game.add.text(
+        //     80,
+        //     MAX_Y - 140,
+        //     'Use the Up and Down arrows to change stages\nUse the Left and Right arrows to select a vehicle\nPress Space to start!',
+        //     {
+        //         font: '25px Arial',
+        //         fill: '#ffffff',
+        //     });
 
         const bestLabel = game.add.text(MAX_X - 220, 20, 'Best Score: ' + localHighScore, { font: '25px Arial', fill: '#ffffff'});
 
@@ -687,6 +697,18 @@ var menuState = {
 var playState = {
     // set up the game, display sprites, etc.
     create: function() {
+        // analytics
+        this.startTime = game.time.now;
+        this.spaceCount = 0;
+        this.skyCactusCount = 0;
+        this.groundCactusCount = 0;
+        this.barCount = 0;
+        this.coinCount = 0;
+        this.bigCoinCount = 0;
+
+        this.currentPattern = null;
+        this.lastPattern = null;
+
         // SETUP ENTITIES
         this.background = addBackground();
 
@@ -753,6 +775,9 @@ var playState = {
         this.barCount = 0;
         this.coinCount = 0;
         this.bigCoinCount = 0;
+
+        this.currentPattern = null;
+        this.lastPattern = null;
     },
 
     update: function() {
@@ -941,17 +966,23 @@ var playState = {
     },
     // helper functions
     spawnObjects: function() {
+        this.lastPattern = this.currentPattern;
         if (EASY_MODE) {
             // const patternIdx = 0;
             const patternIdx = Math.floor(Math.random() * easySpawnPatterns.length);
             // spawn patterns defined in external file
             this.renderPattern(easySpawnPatterns[patternIdx]);
+            this.currentPattern = patternIdx;
         } else {
             // const patternIdx = 0;
             const patternIdx = Math.floor(Math.random() * spawnPatterns.length);
             // spawn patterns defined in external file
             this.renderPattern(spawnPatterns[patternIdx]);
+            this.currentPattern = patternIdx;
         }
+
+        const eventProperties = this.getAnalyticsEventProperties();
+        amplitude.getInstance().logEvent('Obstacles Spawned', eventProperties);
     },
 
     onSpace: function() {
@@ -977,9 +1008,9 @@ var playState = {
             this.bestLabel.text = 'Best Score: ' + localHighScore;
         }
         this.maybeMarkCoin(coinSprite);
-        const eventProperties = this.getAnalyticsEventProperties();
-        eventProperties['type'] = coinSprite.ampData.type;
-        amplitude.getInstance().logEvent('Item Collected', eventProperties);
+        // const eventProperties = this.getAnalyticsEventProperties();
+        // eventProperties['type'] = coinSprite.ampData.type;
+        // amplitude.getInstance().logEvent('Item Collected', eventProperties);
 
         coinSprite.destroy();
     },
@@ -1044,7 +1075,7 @@ var playState = {
     },
     getAnalyticsEventProperties: function() {
         return {
-            'score': this.score,
+            'score': this.score || 0,
             'fuel left': this.currentFuel,
             'fuel fraction': this.currentFuel / maxFuel,
             'duration': Math.floor((game.time.now - this.startTime) / 1000),
@@ -1056,6 +1087,8 @@ var playState = {
             'spacebar down count': this.spaceCount,
             'hitboxes on': DEBUG,
             'difficulty': EASY_MODE ? 'easy' : 'hard',
+            'last pattern index': this.lastPattern || -1,
+            'current pattern index': this.currentPattern || -1,
         };
     }
 };
