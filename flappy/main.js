@@ -23,7 +23,7 @@ const START_Y = 400;
 const MAX_X = 1200;
 const MAX_Y = 800;
 
-const GAME_VERSION = 'v0.8.5';
+const GAME_VERSION = 'v0.9.9';
 
 // pipe constants
 const pipeHeight = 50;
@@ -41,6 +41,9 @@ const maxFuel = 500;
 // should map to keys in sprite file names
 const VEHICLES = {
     BALLOON: 'BALLOON',
+    BALLOON1: 'BALLOON1',
+    BALLOON2: 'BALLOON2',
+    BALLOON3: 'BALLOON3',
     SQUARE: 'SQUARE',
     PLANE: 'PLANE',
     PLANE1: 'PLANE1',
@@ -54,6 +57,9 @@ const VEHICLES = {
 
 const VEHICLE_TO_BASE_VEHICLE = {
     BALLOON: 'BALLOON',
+    BALLOON1: 'BALLOON',
+    BALLOON2: 'BALLOON',
+    BALLOON3: 'BALLOON',
     SQUARE: 'SQUARE',
     PLANE: 'PLANE',
     PLANE1: 'PLANE',
@@ -67,6 +73,9 @@ const VEHICLE_TO_BASE_VEHICLE = {
 
 const IS_SPRITE_SHEET = {
     BALLOON: false,
+    BALLOON1: true,
+    BALLOON2: true,
+    BALLOON3: true,
     SQUARE: false,
     PLANE: false,
     PLANE1: true,
@@ -79,10 +88,12 @@ const IS_SPRITE_SHEET = {
 };
 
 const VEHICLE_LIST = [
-    VEHICLES.BALLOON, VEHICLES.SQUARE,
+    VEHICLES.BALLOON1, VEHICLES.BALLOON2, VEHICLES.BALLOON3,
     VEHICLES.PLANE1, VEHICLES.PLANE2, VEHICLES.PLANE3,
     VEHICLES.ROCKET3, VEHICLES.ROCKET2, VEHICLES.ROCKET1,
 ];
+
+const ALL_VEHICLE_LIST = VEHICLE_LIST.concat([VEHICLES.SQUARE])
 
 const STAGES = {
     'DESERT': 'desert',
@@ -99,9 +110,10 @@ const stageToBackgroundLength = {
 // mapping to sprite file names
 const SPRITES = {
     [VEHICLES.BALLOON]: 'balloon',
-    [VEHICLES.SQUARE]: 'bird',
+    [VEHICLES.SQUARE]: 'secret-ship',
     PIPE: 'pipe',
     [VEHICLES.PLANE]: 'plane',
+    // objects
     COIN_1: '1coin',
     COIN_A: '5coin',
     SKY_CACTUS: 'cloud-cactus',
@@ -110,6 +122,13 @@ const SPRITES = {
     SPACE_ROCKS: 'space-obstacle',
     PLANET_SKY: 'planet1',
     PLANET_EARTH: 'planet2',
+    LONG_ISLAND: 'floating-island',
+    RAINBOW_ISLAND: 'rainbow-island',
+    AIR_ROCK: 'rock-cluster',
+    // overlays
+    INSTRUCTIONS: 'instruction',
+    SPLASH: 'data-explorer-splash',
+    GAME_OVER: 'game-over',
 };
 
 const OBSTACLE_SPRITES = {
@@ -119,9 +138,9 @@ const OBSTACLE_SPRITES = {
         LONG: SPRITES.SAND_ISLAND,
     },
     [STAGES.SKY]: {
-        CLOUD: SPRITES.SKY_CACTUS,
-        ROCK: SPRITES.EARTH_CACTUS,
-        LONG: SPRITES.SAND_ISLAND,
+        CLOUD: SPRITES.RAINBOW_ISLAND,
+        ROCK: SPRITES.AIR_ROCK,
+        LONG: SPRITES.LONG_ISLAND,
     },
     [STAGES.SPACE]: {
         CLOUD: SPRITES.PLANET_SKY,
@@ -137,17 +156,25 @@ const BACKGROUNDS = {
 };
 
 const SPRITE_SHEETS = {
+    [VEHICLES.BALLOON1]: 'balloon1',
+    [VEHICLES.BALLOON2]: 'balloon2',
+    [VEHICLES.BALLOON3]: 'balloon3',
     [VEHICLES.PLANE1]: 'plane1',
     [VEHICLES.PLANE2]: 'plane2',
     [VEHICLES.PLANE3]: 'plane3',
     [VEHICLES.ROCKET1]: 'ship1',
     [VEHICLES.ROCKET2]: 'ship2',
     [VEHICLES.ROCKET3]: 'ship3',
-    BUTTON_SHEET: 'button',
+    BUTTON: 'button',
+    START_BUTTON: 'start',
 };
 
 const SHEET_DIMENSIONS = {
-    [SPRITE_SHEETS.BUTTON_SHEET]: [50, 50],
+    [SPRITE_SHEETS.BUTTON]: [50, 50],
+    [SPRITE_SHEETS.START_BUTTON]: [150, 100],
+    [SPRITE_SHEETS[VEHICLES.BALLOON1]]: [100, 175],
+    [SPRITE_SHEETS[VEHICLES.BALLOON2]]: [100, 175],
+    [SPRITE_SHEETS[VEHICLES.BALLOON3]]: [100, 175],
     [SPRITE_SHEETS[VEHICLES.PLANE1]]: [100, 100],
     [SPRITE_SHEETS[VEHICLES.PLANE2]]: [100, 100],
     [SPRITE_SHEETS[VEHICLES.PLANE3]]: [100, 100],
@@ -162,7 +189,7 @@ const BUTTON_SHEET_WIDTH = 50;
 // controls falling of main sprite
 const vehicleToGravity = {
     [VEHICLES.BALLOON]: 600,
-    [VEHICLES.SQUARE]: 1500,
+    [VEHICLES.SQUARE]: 1700,
     [VEHICLES.PLANE]: 1500,
     [VEHICLES.ROCKET]: 1300,
 };
@@ -182,23 +209,23 @@ const vehicleAngleOffset = {
 
 // x, y, xoffset, y offset
 const vehicleToBodyModifier = {
-    [VEHICLES.BALLOON]: [80, 170, 10, 10],
-    [VEHICLES.SQUARE]: [50, 50, 0, 0],
-    [VEHICLES.PLANE]: [80, 70, 10, 20],
-    [VEHICLES.ROCKET]: [200, 130, 25, 35], // these get halved
+    [VEHICLES.BALLOON]: [70, 140, 15, 15],
+    [VEHICLES.SQUARE]: [248, 284, 0, 0], // size gets cut in 4
+    [VEHICLES.PLANE]: [75, 60, 15, 25],
+    [VEHICLES.ROCKET]: [180, 120, 30, 40], // these get halved
 };
 
 // controls speed of scrolling
 const vehicleToSpeed = {
     [VEHICLES.BALLOON]: -200,
-    [VEHICLES.SQUARE]: -300,
+    [VEHICLES.SQUARE]: -420,
     [VEHICLES.PLANE]: -300,
     [VEHICLES.ROCKET]: -350,
 };
 
 const vehicleToObstacleTimeout = {
     [VEHICLES.BALLOON]: 7500,
-    [VEHICLES.SQUARE]: 5000,
+    [VEHICLES.SQUARE]: 3500,
     [VEHICLES.PLANE]: 5000,
     [VEHICLES.ROCKET]: 4500,
 };
@@ -211,10 +238,10 @@ const vehicleToVelocityDelta = {
     [VEHICLES.ROCKET]: 200,
 };
 const vehicleToFuelDrainMillis = {
-    [VEHICLES.BALLOON]: 60,
-    [VEHICLES.SQUARE]: 40,
-    [VEHICLES.PLANE]: 40,
-    [VEHICLES.ROCKET]: 60,
+    [VEHICLES.BALLOON]: 70,
+    [VEHICLES.SQUARE]: 80,
+    [VEHICLES.PLANE]: 55,
+    [VEHICLES.ROCKET]: 50,
 }
 
 const vehicleToAnalyticsName = {
@@ -222,6 +249,9 @@ const vehicleToAnalyticsName = {
     [VEHICLES.SQUARE]: 'glitch',
     [VEHICLES.PLANE]: 'paper plane',
     [VEHICLES.ROCKET]: 'rocket',
+    [VEHICLES.BALLOON1]: 'balloon (standard)',
+    [VEHICLES.BALLOON2]: 'balloon (white)',
+    [VEHICLES.BALLOON3]: 'balloon (pink)',
     [VEHICLES.PLANE1]: 'paper plane (standard)',
     [VEHICLES.PLANE2]: 'paper plane (green)',
     [VEHICLES.PLANE3]: 'paper plane (purple)',
@@ -235,9 +265,12 @@ const vehicleToScoreName = {
     [VEHICLES.SQUARE]: 'Abstract Art',
     [VEHICLES.PLANE]: 'Paper Airplane',
     [VEHICLES.ROCKET]: 'Space Ship',
-    [VEHICLES.PLANE1]: 'Paper Airplane (Standard)',
-    [VEHICLES.PLANE2]: 'Paper Airplane (Green)',
-    [VEHICLES.PLANE3]: 'Paper Airplane (Purple)',
+    [VEHICLES.BALLOON1]: 'Hot Air Balloon (Tangerine)',
+    [VEHICLES.BALLOON2]: 'Hot Air Balloon (Peppermint)',
+    [VEHICLES.BALLOON3]: 'Hot Air Balloon (Watermelon)',
+    [VEHICLES.PLANE1]: 'Paper Airplane (Coconut)',
+    [VEHICLES.PLANE2]: 'Paper Airplane (Apple)',
+    [VEHICLES.PLANE3]: 'Paper Airplane (Grape)',
     [VEHICLES.ROCKET1]: 'Space Ship (Strawberry)',
     [VEHICLES.ROCKET2]: 'Space Ship (Cream)',
     [VEHICLES.ROCKET3]: 'Space Ship (Standard)',
@@ -281,8 +314,10 @@ let baseVehicleType = VEHICLE_TO_BASE_VEHICLE[vehicleType];
 // let vehicleIndex = 0;
 // let vehicleType = VEHICLES.BALLOON;
 // let baseVehicleType = VEHICLES.BALLOON;
-let selectedStageIndex = 0;
-let selectedStage = STAGES.DESERT;
+let selectedStageIndex = Math.floor(Math.random() * STAGE_LIST.length);
+let selectedStage = STAGE_LIST[selectedStageIndex];
+// let selectedStageIndex = 0;
+// let selectedStage = STAGES.DESERT;
 let DEBUG = false;
 let EASY_MODE = true;
 
@@ -309,7 +344,6 @@ function logHighscore(score, duration, vehicle, stage) {
             console.log(err);
             return;
         }
-        console.log('Highscore added');
     });
 
     return score > lastScore;
@@ -372,7 +406,7 @@ var loadState = {
         // could put up a loading screen here
         preloadSprites();
         // Change the background color of the game to blue
-        game.stage.backgroundColor = '#71c5cf';
+        game.stage.backgroundColor = '#22BCE2';
     },
     create: function() {
         game.state.start('login');
@@ -387,13 +421,17 @@ var loginState = {
         amplitude.getInstance().identify(identify);
         userName = '';
 
-        const loginPrompt = game.add.text(MAX_X / 2, 100, 'Please enter your email', {
+        const splash = game.add.sprite(MAX_X / 2, -80, SPRITES.SPLASH);
+        splash.anchor.setTo(0.5, 0);
+        splash.scale.setTo(0.8, 0.8)
+
+        const loginPrompt = game.add.text(MAX_X /2, MAX_Y - 220, 'Please enter your email and click Start to continue', {
             font: '30px Arial',
             fill: '#ffffff',
         });
         loginPrompt.anchor.set(0.5);
 
-        this.userInput = game.add.inputField(MAX_X / 2 - 200, 200, {
+        this.userInput = game.add.inputField(MAX_X / 2 - 200, MAX_Y - 170, {
             blockInput: false,
             font: '18px Arial',
             forceCase: PhaserInput.ForceCase.lower,
@@ -410,19 +448,14 @@ var loginState = {
         this.userInput.startFocus();
 
 
-        const submitButton = game.add.button(MAX_X / 2, MAX_Y / 2, 'button', this.onSubmit, this, 0, 0, 0);
+        const submitButton = game.add.button(MAX_X / 2, MAX_Y - 80, SPRITE_SHEETS.START_BUTTON, this.onSubmit, this, 0, 1, 2);
         submitButton.anchor.set(0.5, 0.5);
-        const submitButtonLabel = game.add.text(MAX_X / 2, MAX_Y / 2 + 50, 'Click the button to continue', {
-            font: '24px Arial',
-            fill: '#ffffff',
-        });
-        submitButtonLabel.anchor.set(0.5, 0.5);
 
 
         this.enterKey = game.input.keyboard.addKey(Phaser.Keyboard.ENTER);
         this.enterKey.onDown.add(this.onSubmit, this);
 
-        this.invalidEmail = game.add.text(MAX_X / 2, MAX_Y - 100, 'Invalid Email', {
+        this.invalidEmail = game.add.text(MAX_X / 2 + 320, MAX_Y - 150, 'Invalid Email', {
             font: '30px Arial',
             fill: '#ff0000',
         });
@@ -439,10 +472,16 @@ var loginState = {
             amplitude.getInstance().setUserId(name);
             var identify = new amplitude.Identify().set('version', GAME_VERSION);
             amplitude.getInstance().identify(identify);
+
             userName = name;
+
+            amplitude.getInstance().logEvent('User Logged In');
+
             game.state.start('menu');
         } else {
             this.invalidEmail.visible = true;
+
+            amplitude.getInstance().logEvent('Invalid Email');
 
             this.userInput.startFocus();
         }
@@ -481,7 +520,7 @@ var menuState = {
             });
 
         // logic for selecting vehicle
-        this.vehicles = VEHICLE_LIST.map(vehicle => {
+        this.vehicles = ALL_VEHICLE_LIST.map(vehicle => {
             const modifier = vehicleToBodyModifier[vehicle];
             let sprite;
             if (IS_SPRITE_SHEET[vehicle]) {
@@ -494,6 +533,9 @@ var menuState = {
             if (VEHICLE_TO_BASE_VEHICLE[vehicle] === VEHICLES.ROCKET) {
                 // scale down
                 sprite.scale.setTo(0.5, 0.5);
+            } else if (VEHICLE_TO_BASE_VEHICLE[vehicle] === VEHICLES.SQUARE) {
+                // scale down
+                sprite.scale.setTo(0.25, 0.25);
             }
             sprite.angle = vehicleAngleOffset[VEHICLE_TO_BASE_VEHICLE[vehicle]]
             sprite.vehicleType = vehicle;
@@ -510,7 +552,7 @@ var menuState = {
             fill: '#ffffff',
         });
         hitBoxLabel.anchor.set(0.5, 0.5);
-        const hitBoxButton = game.add.button(MAX_X - 50, MAX_Y - 140, 'button', this.toggleDebug, this, 0, 0, 0);
+        const hitBoxButton = game.add.button(MAX_X - 50, MAX_Y - 140, SPRITE_SHEETS.BUTTON, this.toggleDebug, this, 0, 0, 0);
         hitBoxButton.anchor.set(0.5, 0.5);
         this.hitBoxButtonLabel = game.add.text(MAX_X - 50, MAX_Y - 136, DEBUG ? 'ON' : 'OFF', {
             font: '16px Arial',
@@ -524,7 +566,7 @@ var menuState = {
             fill: '#ffffff',
         });
         difficultyLabel.anchor.set(0.5, 0.5);
-        const hardButton = game.add.button(MAX_X - 50, MAX_Y - 50, 'button', this.toggleDifficulty, this, 0, 0, 0);
+        const hardButton = game.add.button(MAX_X - 50, MAX_Y - 50, SPRITE_SHEETS.BUTTON, this.toggleDifficulty, this, 0, 0, 0);
         hardButton.anchor.set(0.5, 0.5);
         this.hardButtonLabel = game.add.text(MAX_X - 50, MAX_Y - 45, EASY_MODE ? 'Easy' : 'Hard', {
             font: '16px Arial',
@@ -532,15 +574,16 @@ var menuState = {
         });
         this.hardButtonLabel.anchor.set(0.5, 0.5);
 
-        // start instructions
-        const startLabel = game.add.text(
-            80,
-            MAX_Y - 140,
-            'Use the Up and Down arrows to change stages\nUse the Left and Right arrows to select a vehicle\nPress Space to start!',
-            {
-                font: '25px Arial',
-                fill: '#ffffff',
-            });
+        game.add.sprite(0, 0, SPRITES.INSTRUCTIONS);
+        // // start instructions
+        // const startLabel = game.add.text(
+        //     80,
+        //     MAX_Y - 140,
+        //     'Use the Up and Down arrows to change stages\nUse the Left and Right arrows to select a vehicle\nPress Space to start!',
+        //     {
+        //         font: '25px Arial',
+        //         fill: '#ffffff',
+        //     });
 
         const bestLabel = game.add.text(MAX_X - 220, 20, 'Best Score: ' + localHighScore, { font: '25px Arial', fill: '#ffffff'});
 
@@ -549,12 +592,14 @@ var menuState = {
         this.upArrow = game.input.keyboard.addKey(Phaser.Keyboard.UP);
         this.downArrow = game.input.keyboard.addKey(Phaser.Keyboard.DOWN);
         this.spaceKey = game.input.keyboard.addKey(Phaser.Keyboard.SPACEBAR);
+        this.secretKey = game.input.keyboard.addKey(Phaser.Keyboard.A);
 
         this.leftArrow.onDown.add(this.onLeft, this);
         this.rightArrow.onDown.add(this.onRight, this);
         this.upArrow.onDown.add(this.onUp, this);
         this.downArrow.onDown.add(this.onDown, this);
         this.spaceKey.onDown.addOnce(this.start, this);
+        this.secretKey.onDown.add(this.onSecretKey, this);
     },
     start: function () {
         var identify = new amplitude.Identify().set('vehicle', vehicleToAnalyticsName[vehicleType]).set('stage', selectedStage).set('vehicle class', vehicleToAnalyticsName[baseVehicleType]);
@@ -571,16 +616,24 @@ var menuState = {
         });
     },
     toggleDifficulty: function() {
-        EASY_MODE = !EASY_MODE;
+        EASY_MODE = !EASY_MODE && vehicleType !== VEHICLES.SQUARE;
         this.hardButtonLabel.text = EASY_MODE ? 'Easy' : 'Hard';
 
         amplitude.getInstance().logEvent('Difficulty Changed', { difficulty: EASY_MODE ? 'easy' : 'hard' });
     },
     toggleDebug: function() {
-        DEBUG = !DEBUG;
+        DEBUG = !DEBUG && vehicleType !== VEHICLES.SQUARE;
         this.hitBoxButtonLabel.text = DEBUG ? 'ON' : 'OFF';
 
         amplitude.getInstance().logEvent('Toggle Hit Boxes', { hitboxes: DEBUG })
+    },
+    onSecretKey: function() {
+        vehicleType = VEHICLES.SQUARE;
+        baseVehicleType = VEHICLES.SQUARE;
+        this.toggleDifficulty();
+        this.toggleDebug();
+
+        amplitude.getInstance().logEvent('Secret Ship Selected');
     },
     onUp: function() {
         const lastStage = selectedStage;
@@ -647,6 +700,18 @@ var menuState = {
 var playState = {
     // set up the game, display sprites, etc.
     create: function() {
+        // analytics
+        this.startTime = game.time.now;
+        this.spaceCount = 0;
+        this.skyCactusCount = 0;
+        this.groundCactusCount = 0;
+        this.barCount = 0;
+        this.coinCount = 0;
+        this.bigCoinCount = 0;
+
+        this.currentPattern = null;
+        this.lastPattern = null;
+
         // SETUP ENTITIES
         this.background = addBackground();
 
@@ -670,6 +735,9 @@ var playState = {
         if (baseVehicleType === VEHICLES.ROCKET) {
             // scale down
             this.vehicle.scale.setTo(0.5, 0.5);
+        } else if (baseVehicleType === VEHICLES.SQUARE) {
+            // scale down
+            this.vehicle.scale.setTo(0.25, 0.25);
         }
         const bodyModifier = vehicleToBodyModifier[baseVehicleType];
         if (bodyModifier) {
@@ -702,6 +770,12 @@ var playState = {
         this.score = 0;
         this.labelScore = game.add.text(20, 20, "Score: 0", { font: "30px Arial", fill: "#ffffff" });
 
+        // GAME OVER
+        this.gameOverImage = game.add.sprite(0, 0, SPRITES.GAME_OVER);
+        this.gameOverCropRect = new Phaser.Rectangle(0, 0, this.gameOverImage.width, this.gameOverImage.height - 350);
+        this.gameOverImage.crop(this.gameOverCropRect);
+        this.gameOverImage.visible = false;
+
         // analytics
         this.startTime = game.time.now;
         this.spaceCount = 0;
@@ -710,6 +784,9 @@ var playState = {
         this.barCount = 0;
         this.coinCount = 0;
         this.bigCoinCount = 0;
+
+        this.currentPattern = null;
+        this.lastPattern = null;
     },
 
     update: function() {
@@ -759,7 +836,11 @@ var playState = {
         } else {
             this.vehicle.body.acceleration.y = 0;
             if (IS_SPRITE_SHEET[vehicleType]) {
-                this.vehicle.frame = 0;
+                if (this.vehicle.alive) {
+                    this.vehicle.frame = 0;
+                } else {
+                    this.vehicle.frame = 2;
+                }
             }
         }
         this.fuelLabel.text = "Fuel: " + this.currentFuel + "/" + maxFuel;
@@ -776,13 +857,17 @@ var playState = {
         });
 
         // update angle based on velocity
-        this.vehicle.angle = vehicleAngleOffset[baseVehicleType] + (this.vehicle.body.velocity.y / vehicleVelocityToAngleRatio[baseVehicleType]);
+        if (this.vehicle.alive) {
+            this.vehicle.angle = vehicleAngleOffset[baseVehicleType] + (this.vehicle.body.velocity.y / vehicleVelocityToAngleRatio[baseVehicleType]);
+        } else {
+            this.vehicle.angle += 5;
+        }
     },
 
     // debugging
     render: function() {
         if (DEBUG) {
-            game.debug.bodyInfo(this.vehicle, 32, 32);
+            // game.debug.bodyInfo(this.vehicle, 32, 32);
             game.debug.body(this.vehicle);
             this.obstacles.forEach((obstacle) => game.debug.body(obstacle));
         }
@@ -817,7 +902,7 @@ var playState = {
         this.obstacles.add(cloud);
         this.initSprite(cloud);
 
-        cloud.body.setSize(184, 184, 8, 8);
+        cloud.body.setSize(172, 184, 14, 8);
         if (!EASY_MODE) {
             cloud.scale.setTo(1.2, 1.2);
         }
@@ -832,7 +917,7 @@ var playState = {
         this.obstacles.add(rock);
         this.initSprite(rock);
 
-        rock.body.setSize(164, 164, 8, 8);
+        rock.body.setSize(156, 164, 12, 8);
         if (!EASY_MODE) {
             rock.scale.setTo(1.3, 1.3);
         }
@@ -890,15 +975,23 @@ var playState = {
     },
     // helper functions
     spawnObjects: function() {
+        this.lastPattern = this.currentPattern;
         if (EASY_MODE) {
+            // const patternIdx = 0;
             const patternIdx = Math.floor(Math.random() * easySpawnPatterns.length);
             // spawn patterns defined in external file
             this.renderPattern(easySpawnPatterns[patternIdx]);
+            this.currentPattern = patternIdx;
         } else {
+            // const patternIdx = 0;
             const patternIdx = Math.floor(Math.random() * spawnPatterns.length);
             // spawn patterns defined in external file
             this.renderPattern(spawnPatterns[patternIdx]);
+            this.currentPattern = patternIdx;
         }
+
+        const eventProperties = this.getAnalyticsEventProperties();
+        amplitude.getInstance().logEvent('Obstacles Spawned', eventProperties);
     },
 
     onSpace: function() {
@@ -924,15 +1017,16 @@ var playState = {
             this.bestLabel.text = 'Best Score: ' + localHighScore;
         }
         this.maybeMarkCoin(coinSprite);
-        const eventProperties = this.getAnalyticsEventProperties();
-        eventProperties['type'] = coinSprite.ampData.type;
-        amplitude.getInstance().logEvent('Item Collected', eventProperties);
+        // const eventProperties = this.getAnalyticsEventProperties();
+        // eventProperties['type'] = coinSprite.ampData.type;
+        // amplitude.getInstance().logEvent('Item Collected', eventProperties);
 
         coinSprite.destroy();
     },
     // Restart the game
     gameOver: function(cause) {
         this.vehicle.alive = false;
+        this.vehicle.body.gravity.y = vehicleToGravity[baseVehicleType] / 2;
         // stop all things
         game.time.events.remove(this.obstacleTimer);
         this.obstacles.forEach((obstacle) => {
@@ -944,14 +1038,15 @@ var playState = {
 
         game.time.events.add(Phaser.Timer.SECOND * 1, this.allowRestart, this);
 
-        this.gameOverLabel = game.add.text(
-            160,
-            MAX_Y / 2,
-            'Game Over...',
-            {
-                font: '40px Arial',
-                fill: '#ff1111',
-            });
+        this.gameOverImage.visible = true;
+        // this.gameOverLabel = game.add.text(
+        //     160,
+        //     MAX_Y / 2,
+        //     'Game Over...',
+        //     {
+        //         font: '40px Arial',
+        //         fill: '#ff1111',
+        //     });
 
         // analytics + leaderboard
         const eventProperties = this.getAnalyticsEventProperties();
@@ -961,7 +1056,9 @@ var playState = {
         logHighscore(this.score, eventProperties.duration, vehicleType, selectedStage);
     },
     allowRestart: function() {
-        this.gameOverLabel.text = 'Game Over... press Space to return';
+        this.gameOverCropRect.height = MAX_Y;
+        this.gameOverImage.updateCrop();
+        // this.gameOverLabel.text = 'Game Over... press Space to return';
         this.canRestart = true;
     },
 
@@ -990,7 +1087,7 @@ var playState = {
     },
     getAnalyticsEventProperties: function() {
         return {
-            'score': this.score,
+            'score': this.score || 0,
             'fuel left': this.currentFuel,
             'fuel fraction': this.currentFuel / maxFuel,
             'duration': Math.floor((game.time.now - this.startTime) / 1000),
@@ -1002,15 +1099,10 @@ var playState = {
             'spacebar down count': this.spaceCount,
             'hitboxes on': DEBUG,
             'difficulty': EASY_MODE ? 'easy' : 'hard',
+            'last pattern index': this.lastPattern || -1,
+            'current pattern index': this.currentPattern || -1,
         };
     }
-};
-
-var endState = {
-
-    create: function() {
-
-    },
 };
 
 
@@ -1026,7 +1118,6 @@ Phaser.Device.whenReady(function() {
     game.state.add('login', loginState);
     game.state.add('menu', menuState);
     game.state.add('play', playState);
-    game.state.add('end', endState);
     // Start the state to actually start the game
     game.state.start('boot');
 });
