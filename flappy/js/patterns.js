@@ -24,9 +24,9 @@ const generateCoinDiamond = function generateCoinDiamond(xCenter, yCenter, cente
         { x: xCenter, y: yCenter - 1, type: 'o'},
     ];
 };
-const generateCoinSquare = function generateCoinSquare(xCenter, yCenter) {
+const generateCoinSquare = function generateCoinSquare(xCenter, yCenter, centerA = true) {
     return [
-        { x: xCenter, y: yCenter, type: '*'},
+        { x: xCenter, y: yCenter, type: centerA ? '*' : 'o'},
         { x: xCenter + 1, y: yCenter + 1, type: 'o'},
         { x: xCenter + 1, y: yCenter, type: 'o'},
         { x: xCenter + 1, y: yCenter - 1, type: 'o'},
@@ -42,7 +42,7 @@ var easySpawnPatterns = [
 [
     { x: 9, y: 8, type: '_'},
 ].concat(
-    generateCoinLine(10, 0, 0, 6, 2),
+    generateCoinLine(10, 1, 0, 6, 1),
     generateCoinLine(10, 6, 0, 6, 2),
     generateCoinLine(9, 11, 0, 8, 3),
     generateCoinDiamond(4, 8),
@@ -94,19 +94,19 @@ var easySpawnPatterns = [
     { x: 3, y: 9, type: 'o'},
     { x: 3, y: 10, type: 'o'},
     { x: 4, y: 9, type: 'o'},
-    { x: 4, y: 10, type: '*'},
+    { x: 4, y: 10, type: 'o'},
     { x: 5, y: 9, type: 'o'},
     { x: 5, y: 10, type: 'o'},
     { x: 6, y: 9, type: 'o'},
     { x: 6, y: 10, type: 'o'},
-    { x: 7, y: 9, type: '*'},
+    { x: 7, y: 9, type: 'o'},
     { x: 7, y: 10, type: '*'},
     { x: 8, y: 9, type: 'o'},
     { x: 8, y: 10, type: 'o'},
     { x: 9, y: 9, type: 'o'},
     { x: 9, y: 10, type: 'o'},
     { x: 10, y: 9, type: 'o'},
-    { x: 10, y: 10, type: '*'},
+    { x: 10, y: 10, type: 'o'},
     { x: 11, y: 9, type: 'o'},
     { x: 11, y: 10, type: 'o'},
 ].concat(
@@ -132,6 +132,8 @@ var spawnPatterns = [
         generateCoinLine(5, 4, -1.2, 3, 3),
         generateCoinLine(14, 2, 1.2, 3, 3),
         generateCoinDiamond(11, 13),
+        generateCoinSquare(2, 10, false),
+        generateCoinSquare(20, 10, false),
         generateCoinDiamond(8, 12, false),
         generateCoinDiamond(14, 12, false),
     ),

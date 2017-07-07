@@ -23,7 +23,7 @@ const START_Y = 400;
 const MAX_X = 1200;
 const MAX_Y = 800;
 
-const GAME_VERSION = 'v0.8.5';
+const GAME_VERSION = 'v0.9.6';
 
 // pipe constants
 const pipeHeight = 50;
@@ -79,10 +79,12 @@ const IS_SPRITE_SHEET = {
 };
 
 const VEHICLE_LIST = [
-    VEHICLES.BALLOON, VEHICLES.SQUARE,
+    VEHICLES.BALLOON,
     VEHICLES.PLANE1, VEHICLES.PLANE2, VEHICLES.PLANE3,
     VEHICLES.ROCKET3, VEHICLES.ROCKET2, VEHICLES.ROCKET1,
 ];
+
+const ALL_VEHICLE_LIST = VEHICLE_LIST.concat([VEHICLES.SQUARE])
 
 const STAGES = {
     'DESERT': 'desert',
@@ -99,7 +101,7 @@ const stageToBackgroundLength = {
 // mapping to sprite file names
 const SPRITES = {
     [VEHICLES.BALLOON]: 'balloon',
-    [VEHICLES.SQUARE]: 'bird',
+    [VEHICLES.SQUARE]: 'secret-ship',
     PIPE: 'pipe',
     [VEHICLES.PLANE]: 'plane',
     COIN_1: '1coin',
@@ -110,6 +112,7 @@ const SPRITES = {
     SPACE_ROCKS: 'space-obstacle',
     PLANET_SKY: 'planet1',
     PLANET_EARTH: 'planet2',
+    LONG_ISLAND: 'floating-island',
 };
 
 const OBSTACLE_SPRITES = {
@@ -121,7 +124,7 @@ const OBSTACLE_SPRITES = {
     [STAGES.SKY]: {
         CLOUD: SPRITES.SKY_CACTUS,
         ROCK: SPRITES.EARTH_CACTUS,
-        LONG: SPRITES.SAND_ISLAND,
+        LONG: SPRITES.LONG_ISLAND,
     },
     [STAGES.SPACE]: {
         CLOUD: SPRITES.PLANET_SKY,
@@ -162,7 +165,7 @@ const BUTTON_SHEET_WIDTH = 50;
 // controls falling of main sprite
 const vehicleToGravity = {
     [VEHICLES.BALLOON]: 600,
-    [VEHICLES.SQUARE]: 1500,
+    [VEHICLES.SQUARE]: 1700,
     [VEHICLES.PLANE]: 1500,
     [VEHICLES.ROCKET]: 1300,
 };
@@ -182,23 +185,23 @@ const vehicleAngleOffset = {
 
 // x, y, xoffset, y offset
 const vehicleToBodyModifier = {
-    [VEHICLES.BALLOON]: [80, 170, 10, 10],
-    [VEHICLES.SQUARE]: [50, 50, 0, 0],
-    [VEHICLES.PLANE]: [80, 70, 10, 20],
-    [VEHICLES.ROCKET]: [200, 130, 25, 35], // these get halved
+    [VEHICLES.BALLOON]: [70, 160, 15, 16],
+    [VEHICLES.SQUARE]: [248, 284, 0, 0], // size gets cut in 4
+    [VEHICLES.PLANE]: [75, 60, 15, 25],
+    [VEHICLES.ROCKET]: [180, 120, 30, 40], // these get halved
 };
 
 // controls speed of scrolling
 const vehicleToSpeed = {
     [VEHICLES.BALLOON]: -200,
-    [VEHICLES.SQUARE]: -300,
+    [VEHICLES.SQUARE]: -420,
     [VEHICLES.PLANE]: -300,
     [VEHICLES.ROCKET]: -350,
 };
 
 const vehicleToObstacleTimeout = {
     [VEHICLES.BALLOON]: 7500,
-    [VEHICLES.SQUARE]: 5000,
+    [VEHICLES.SQUARE]: 3500,
     [VEHICLES.PLANE]: 5000,
     [VEHICLES.ROCKET]: 4500,
 };
@@ -212,9 +215,9 @@ const vehicleToVelocityDelta = {
 };
 const vehicleToFuelDrainMillis = {
     [VEHICLES.BALLOON]: 60,
-    [VEHICLES.SQUARE]: 40,
+    [VEHICLES.SQUARE]: 80,
     [VEHICLES.PLANE]: 40,
-    [VEHICLES.ROCKET]: 60,
+    [VEHICLES.ROCKET]: 50,
 }
 
 const vehicleToAnalyticsName = {
@@ -281,8 +284,10 @@ let baseVehicleType = VEHICLE_TO_BASE_VEHICLE[vehicleType];
 // let vehicleIndex = 0;
 // let vehicleType = VEHICLES.BALLOON;
 // let baseVehicleType = VEHICLES.BALLOON;
-let selectedStageIndex = 0;
-let selectedStage = STAGES.DESERT;
+let selectedStageIndex = Math.floor(Math.random() * STAGE_LIST.length);
+let selectedStage = STAGE_LIST[selectedStageIndex];
+// let selectedStageIndex = 0;
+// let selectedStage = STAGES.DESERT;
 let DEBUG = false;
 let EASY_MODE = true;
 
@@ -309,7 +314,6 @@ function logHighscore(score, duration, vehicle, stage) {
             console.log(err);
             return;
         }
-        console.log('Highscore added');
     });
 
     return score > lastScore;
@@ -481,7 +485,7 @@ var menuState = {
             });
 
         // logic for selecting vehicle
-        this.vehicles = VEHICLE_LIST.map(vehicle => {
+        this.vehicles = ALL_VEHICLE_LIST.map(vehicle => {
             const modifier = vehicleToBodyModifier[vehicle];
             let sprite;
             if (IS_SPRITE_SHEET[vehicle]) {
@@ -494,6 +498,9 @@ var menuState = {
             if (VEHICLE_TO_BASE_VEHICLE[vehicle] === VEHICLES.ROCKET) {
                 // scale down
                 sprite.scale.setTo(0.5, 0.5);
+            } else if (VEHICLE_TO_BASE_VEHICLE[vehicle] === VEHICLES.SQUARE) {
+                // scale down
+                sprite.scale.setTo(0.25, 0.25);
             }
             sprite.angle = vehicleAngleOffset[VEHICLE_TO_BASE_VEHICLE[vehicle]]
             sprite.vehicleType = vehicle;
@@ -549,12 +556,14 @@ var menuState = {
         this.upArrow = game.input.keyboard.addKey(Phaser.Keyboard.UP);
         this.downArrow = game.input.keyboard.addKey(Phaser.Keyboard.DOWN);
         this.spaceKey = game.input.keyboard.addKey(Phaser.Keyboard.SPACEBAR);
+        this.secretKey = game.input.keyboard.addKey(Phaser.Keyboard.A);
 
         this.leftArrow.onDown.add(this.onLeft, this);
         this.rightArrow.onDown.add(this.onRight, this);
         this.upArrow.onDown.add(this.onUp, this);
         this.downArrow.onDown.add(this.onDown, this);
         this.spaceKey.onDown.addOnce(this.start, this);
+        this.secretKey.onDown.add(this.onSecretKey, this);
     },
     start: function () {
         var identify = new amplitude.Identify().set('vehicle', vehicleToAnalyticsName[vehicleType]).set('stage', selectedStage).set('vehicle class', vehicleToAnalyticsName[baseVehicleType]);
@@ -571,16 +580,24 @@ var menuState = {
         });
     },
     toggleDifficulty: function() {
-        EASY_MODE = !EASY_MODE;
+        EASY_MODE = !EASY_MODE && vehicleType !== VEHICLES.SQUARE;
         this.hardButtonLabel.text = EASY_MODE ? 'Easy' : 'Hard';
 
         amplitude.getInstance().logEvent('Difficulty Changed', { difficulty: EASY_MODE ? 'easy' : 'hard' });
     },
     toggleDebug: function() {
-        DEBUG = !DEBUG;
+        DEBUG = !DEBUG && vehicleType !== VEHICLES.SQUARE;
         this.hitBoxButtonLabel.text = DEBUG ? 'ON' : 'OFF';
 
         amplitude.getInstance().logEvent('Toggle Hit Boxes', { hitboxes: DEBUG })
+    },
+    onSecretKey: function() {
+        vehicleType = VEHICLES.SQUARE;
+        baseVehicleType = VEHICLES.SQUARE;
+        this.toggleDifficulty();
+        this.toggleDebug();
+
+        amplitude.getInstance().logEvent('Secret Ship Selected');
     },
     onUp: function() {
         const lastStage = selectedStage;
@@ -670,6 +687,9 @@ var playState = {
         if (baseVehicleType === VEHICLES.ROCKET) {
             // scale down
             this.vehicle.scale.setTo(0.5, 0.5);
+        } else if (baseVehicleType === VEHICLES.SQUARE) {
+            // scale down
+            this.vehicle.scale.setTo(0.25, 0.25);
         }
         const bodyModifier = vehicleToBodyModifier[baseVehicleType];
         if (bodyModifier) {
@@ -759,7 +779,11 @@ var playState = {
         } else {
             this.vehicle.body.acceleration.y = 0;
             if (IS_SPRITE_SHEET[vehicleType]) {
-                this.vehicle.frame = 0;
+                if (this.vehicle.alive) {
+                    this.vehicle.frame = 0;
+                } else {
+                    this.vehicle.frame = 2;
+                }
             }
         }
         this.fuelLabel.text = "Fuel: " + this.currentFuel + "/" + maxFuel;
@@ -776,13 +800,17 @@ var playState = {
         });
 
         // update angle based on velocity
-        this.vehicle.angle = vehicleAngleOffset[baseVehicleType] + (this.vehicle.body.velocity.y / vehicleVelocityToAngleRatio[baseVehicleType]);
+        if (this.vehicle.alive) {
+            this.vehicle.angle = vehicleAngleOffset[baseVehicleType] + (this.vehicle.body.velocity.y / vehicleVelocityToAngleRatio[baseVehicleType]);
+        } else {
+            this.vehicle.angle += 5;
+        }
     },
 
     // debugging
     render: function() {
         if (DEBUG) {
-            game.debug.bodyInfo(this.vehicle, 32, 32);
+            // game.debug.bodyInfo(this.vehicle, 32, 32);
             game.debug.body(this.vehicle);
             this.obstacles.forEach((obstacle) => game.debug.body(obstacle));
         }
@@ -817,7 +845,7 @@ var playState = {
         this.obstacles.add(cloud);
         this.initSprite(cloud);
 
-        cloud.body.setSize(184, 184, 8, 8);
+        cloud.body.setSize(172, 184, 14, 8);
         if (!EASY_MODE) {
             cloud.scale.setTo(1.2, 1.2);
         }
@@ -832,7 +860,7 @@ var playState = {
         this.obstacles.add(rock);
         this.initSprite(rock);
 
-        rock.body.setSize(164, 164, 8, 8);
+        rock.body.setSize(156, 164, 12, 8);
         if (!EASY_MODE) {
             rock.scale.setTo(1.3, 1.3);
         }
@@ -933,6 +961,7 @@ var playState = {
     // Restart the game
     gameOver: function(cause) {
         this.vehicle.alive = false;
+        this.vehicle.body.gravity.y = vehicleToGravity[baseVehicleType] / 2;
         // stop all things
         game.time.events.remove(this.obstacleTimer);
         this.obstacles.forEach((obstacle) => {
