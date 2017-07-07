@@ -1558,14 +1558,7 @@ function geronimo() {
 			dotPosY = this.row;
 			$.each(this.posX, function () {
 				if (this.type == "pill") {
-					context.font = "8px Arial"
-					var rand = Math.random();
-					if (rand > 0.5) {
-						context.fillText("0", game.toPixelPos(this.col - 1) + pacman.radius, game.toPixelPos(dotPosY - 1) + pacman.radius)
-					} else {
-						context.fillText("1", game.toPixelPos(this.col - 1) + pacman.radius, game.toPixelPos(dotPosY - 1) + pacman.radius)
-					}
-					// context.arc(game.toPixelPos(this.col - 1) + pacman.radius, game.toPixelPos(dotPosY - 1) + pacman.radius, game.pillSize, 0 * Math.PI, 2 * Math.PI);
+					context.arc(game.toPixelPos(this.col - 1) + pacman.radius, game.toPixelPos(dotPosY - 1) + pacman.radius, game.pillSize, 0 * Math.PI, 2 * Math.PI);
 					context.moveTo(game.toPixelPos(this.col - 1), game.toPixelPos(dotPosY - 1));
 				}
 				else if (this.type == "powerpill") {
