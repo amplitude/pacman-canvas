@@ -1371,6 +1371,20 @@ function geronimo() {
 		$("body").scrollTop(1);
 	}
 
+	function submitEmail() {
+		console.log("submit email pressed");
+		var patt = /^.+@.+\..+$/;
+		if ($('#playerEmail').val() === undefined || !patt.test($('#playerEmail').val())) {
+			$('#form-validater').html("Please enter a valid email<br/>");
+		} else {
+			$('#form-validater').html("");
+			amplitude.getInstance().setUserId($('#playerEmail').val());
+			game.loggedIn = true;
+			$('#email-form').hide();
+			game.newGame();
+		}
+	}
+
 	$(document).ready(function () {
 
 		$.ajaxSetup({ mimeType: "application/json" });
@@ -1408,34 +1422,14 @@ function geronimo() {
 		// Keyboard
 		window.addEventListener('keydown', doKeyDown, true);
 
-		$('#canvas-container').click(function (e) {
-			console.log(e.target);
-			if (!(game.gameOver == true)) game.pauseResume();
-		});
-
-		$('#canvas-container #email-form *').click(function (e) {
-			console.log('stopped');
-			console.log(e.target);
-			e.stopPropagation();
-		});
-
 		$('#email-submit').click(function () {
-			console.log("submit email pressed");
-			var patt = /^.+@.+\..+$/;
-			if ($('#playerEmail').val() === undefined || !patt.test($('#playerEmail').val())) {
-				$('#form-validater').html("Please enter a valid email<br/>");
-			} else {
-				$('#form-validater').html("");
-				amplitude.getInstance().setUserId($('#playerEmail').val());
-				game.loggedIn = true;
-				$('#email-form').hide();
-				game.newGame();
-			}
+			submitEmail();
 		});
 
-		$('body').on('click', '#score-submit', function () {
-			console.log("submit highscore pressed");
-			addHighscore();
+		$('#playerEmail').keyup(function(e) {
+			if (e.keyCode == 13) {
+				$('#email-submit').click();
+			}
 		});
 
 		$('body').on('click', '#show-highscore', function () {

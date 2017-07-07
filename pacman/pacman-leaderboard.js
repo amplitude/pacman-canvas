@@ -20,5 +20,5 @@ function getHighscore() {
 		console.log(error);
 	});
 }
-
+getHighscore();
 setInterval(getHighscore, 10000);

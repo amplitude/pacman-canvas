@@ -60,7 +60,6 @@ body {
 #email-form {
 	margin-top: 8px;
 	position: relative;
-	display: none;
 }
 input[type="text"]:hover, input[type="text"]:focus, input[type="password"]:hover, input[type="password"]:focus, textarea:hover, textarea:focus {
     border: 1px #c80a0a solid;
