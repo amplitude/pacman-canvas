@@ -338,6 +338,7 @@ function geronimo() {
 			$('#canvas-overlay-container').fadeIn(200);
 			if ($('.controls').css('display') != "none") $('.controls').slideToggle(200);
 			$('#canvas-overlay-content #title').text(title);
+			$('#canvas-overlay-content #title').show();
 			$('#canvas-overlay-content #text').html(text);
 		};
 
@@ -1427,6 +1428,7 @@ function geronimo() {
 		window.addEventListener('keydown', doKeyDown, true);
 
 		$('#email-submit').click(function () {
+			$('#splash-screen').hide();
 			submitEmail();
 		});
 
@@ -1683,22 +1685,30 @@ function geronimo() {
 			case 38:	// UP Arrow Key pressed
 				evt.preventDefault();
 			case 87:	// W pressed
-				pacman.directionWatcher.set(up);
+				if (!$('#playerEmail').is(':focus')) {
+					pacman.directionWatcher.set(up);
+				}
 				break;
 			case 40:	// DOWN Arrow Key pressed
 				evt.preventDefault();
-			case 83:	// S pressed 
-				pacman.directionWatcher.set(down);
+			case 83:	// S pressed
+				if (!$('#playerEmail').is(':focus')) {
+					pacman.directionWatcher.set(down);
+				}
 				break;
 			case 37:	// LEFT Arrow Key pressed
 				evt.preventDefault();
 			case 65:	// A pressed
-				pacman.directionWatcher.set(left);
+				if (!$('#playerEmail').is(':focus')) {
+					pacman.directionWatcher.set(left);
+				}
 				break;
 			case 39:	// RIGHT Arrow Key pressed
 				evt.preventDefault();
 			case 68:	// D pressed
-				pacman.directionWatcher.set(right);
+				if (!$('#playerEmail').is(':focus')) {
+					pacman.directionWatcher.set(right);
+				}
 				break;
 			case 78:	// N pressed
 				if (!$('#playerEmail').is(':focus')) {
