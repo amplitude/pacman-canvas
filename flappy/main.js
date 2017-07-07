@@ -23,7 +23,7 @@ const START_Y = 400;
 const MAX_X = 1200;
 const MAX_Y = 800;
 
-const GAME_VERSION = 'v0.9.6';
+const GAME_VERSION = 'v0.9.9';
 
 // pipe constants
 const pipeHeight = 50;
@@ -41,6 +41,9 @@ const maxFuel = 500;
 // should map to keys in sprite file names
 const VEHICLES = {
     BALLOON: 'BALLOON',
+    BALLOON1: 'BALLOON1',
+    BALLOON2: 'BALLOON2',
+    BALLOON3: 'BALLOON3',
     SQUARE: 'SQUARE',
     PLANE: 'PLANE',
     PLANE1: 'PLANE1',
@@ -54,6 +57,9 @@ const VEHICLES = {
 
 const VEHICLE_TO_BASE_VEHICLE = {
     BALLOON: 'BALLOON',
+    BALLOON1: 'BALLOON',
+    BALLOON2: 'BALLOON',
+    BALLOON3: 'BALLOON',
     SQUARE: 'SQUARE',
     PLANE: 'PLANE',
     PLANE1: 'PLANE',
@@ -67,6 +73,9 @@ const VEHICLE_TO_BASE_VEHICLE = {
 
 const IS_SPRITE_SHEET = {
     BALLOON: false,
+    BALLOON1: true,
+    BALLOON2: true,
+    BALLOON3: true,
     SQUARE: false,
     PLANE: false,
     PLANE1: true,
@@ -79,7 +88,7 @@ const IS_SPRITE_SHEET = {
 };
 
 const VEHICLE_LIST = [
-    VEHICLES.BALLOON,
+    VEHICLES.BALLOON1, VEHICLES.BALLOON2, VEHICLES.BALLOON3,
     VEHICLES.PLANE1, VEHICLES.PLANE2, VEHICLES.PLANE3,
     VEHICLES.ROCKET3, VEHICLES.ROCKET2, VEHICLES.ROCKET1,
 ];
@@ -140,17 +149,25 @@ const BACKGROUNDS = {
 };
 
 const SPRITE_SHEETS = {
+    [VEHICLES.BALLOON1]: 'balloon1',
+    [VEHICLES.BALLOON2]: 'balloon2',
+    [VEHICLES.BALLOON3]: 'balloon3',
     [VEHICLES.PLANE1]: 'plane1',
     [VEHICLES.PLANE2]: 'plane2',
     [VEHICLES.PLANE3]: 'plane3',
     [VEHICLES.ROCKET1]: 'ship1',
     [VEHICLES.ROCKET2]: 'ship2',
     [VEHICLES.ROCKET3]: 'ship3',
-    BUTTON_SHEET: 'button',
+    BUTTON: 'button',
+    START_BUTTON: 'start',
 };
 
 const SHEET_DIMENSIONS = {
-    [SPRITE_SHEETS.BUTTON_SHEET]: [50, 50],
+    [SPRITE_SHEETS.BUTTON]: [50, 50],
+    [SPRITE_SHEETS.START_BUTTON]: [150, 100],
+    [SPRITE_SHEETS[VEHICLES.BALLOON1]]: [100, 175],
+    [SPRITE_SHEETS[VEHICLES.BALLOON2]]: [100, 175],
+    [SPRITE_SHEETS[VEHICLES.BALLOON3]]: [100, 175],
     [SPRITE_SHEETS[VEHICLES.PLANE1]]: [100, 100],
     [SPRITE_SHEETS[VEHICLES.PLANE2]]: [100, 100],
     [SPRITE_SHEETS[VEHICLES.PLANE3]]: [100, 100],
@@ -185,7 +202,7 @@ const vehicleAngleOffset = {
 
 // x, y, xoffset, y offset
 const vehicleToBodyModifier = {
-    [VEHICLES.BALLOON]: [70, 160, 15, 16],
+    [VEHICLES.BALLOON]: [70, 140, 15, 15],
     [VEHICLES.SQUARE]: [248, 284, 0, 0], // size gets cut in 4
     [VEHICLES.PLANE]: [75, 60, 15, 25],
     [VEHICLES.ROCKET]: [180, 120, 30, 40], // these get halved
@@ -214,9 +231,9 @@ const vehicleToVelocityDelta = {
     [VEHICLES.ROCKET]: 200,
 };
 const vehicleToFuelDrainMillis = {
-    [VEHICLES.BALLOON]: 60,
+    [VEHICLES.BALLOON]: 70,
     [VEHICLES.SQUARE]: 80,
-    [VEHICLES.PLANE]: 40,
+    [VEHICLES.PLANE]: 55,
     [VEHICLES.ROCKET]: 50,
 }
 
@@ -225,6 +242,9 @@ const vehicleToAnalyticsName = {
     [VEHICLES.SQUARE]: 'glitch',
     [VEHICLES.PLANE]: 'paper plane',
     [VEHICLES.ROCKET]: 'rocket',
+    [VEHICLES.BALLOON1]: 'balloon (standard)',
+    [VEHICLES.BALLOON2]: 'balloon (white)',
+    [VEHICLES.BALLOON3]: 'balloon (pink)',
     [VEHICLES.PLANE1]: 'paper plane (standard)',
     [VEHICLES.PLANE2]: 'paper plane (green)',
     [VEHICLES.PLANE3]: 'paper plane (purple)',
@@ -238,9 +258,12 @@ const vehicleToScoreName = {
     [VEHICLES.SQUARE]: 'Abstract Art',
     [VEHICLES.PLANE]: 'Paper Airplane',
     [VEHICLES.ROCKET]: 'Space Ship',
-    [VEHICLES.PLANE1]: 'Paper Airplane (Standard)',
-    [VEHICLES.PLANE2]: 'Paper Airplane (Green)',
-    [VEHICLES.PLANE3]: 'Paper Airplane (Purple)',
+    [VEHICLES.BALLOON1]: 'Hot Air Balloon (Tangerine)',
+    [VEHICLES.BALLOON2]: 'Hot Air Balloon (Peppermint)',
+    [VEHICLES.BALLOON3]: 'Hot Air Balloon (Watermelon)',
+    [VEHICLES.PLANE1]: 'Paper Airplane (Coconut)',
+    [VEHICLES.PLANE2]: 'Paper Airplane (Apple)',
+    [VEHICLES.PLANE3]: 'Paper Airplane (Grape)',
     [VEHICLES.ROCKET1]: 'Space Ship (Strawberry)',
     [VEHICLES.ROCKET2]: 'Space Ship (Cream)',
     [VEHICLES.ROCKET3]: 'Space Ship (Standard)',
@@ -414,9 +437,9 @@ var loginState = {
         this.userInput.startFocus();
 
 
-        const submitButton = game.add.button(MAX_X / 2, MAX_Y / 2, 'button', this.onSubmit, this, 0, 0, 0);
+        const submitButton = game.add.button(MAX_X / 2, MAX_Y / 2, SPRITE_SHEETS.START_BUTTON, this.onSubmit, this, 0, 1, 2);
         submitButton.anchor.set(0.5, 0.5);
-        const submitButtonLabel = game.add.text(MAX_X / 2, MAX_Y / 2 + 50, 'Click the button to continue', {
+        const submitButtonLabel = game.add.text(MAX_X / 2, MAX_Y / 2 + 100, 'Click Start to Continue', {
             font: '24px Arial',
             fill: '#ffffff',
         });
@@ -517,7 +540,7 @@ var menuState = {
             fill: '#ffffff',
         });
         hitBoxLabel.anchor.set(0.5, 0.5);
-        const hitBoxButton = game.add.button(MAX_X - 50, MAX_Y - 140, 'button', this.toggleDebug, this, 0, 0, 0);
+        const hitBoxButton = game.add.button(MAX_X - 50, MAX_Y - 140, SPRITE_SHEETS.BUTTON, this.toggleDebug, this, 0, 0, 0);
         hitBoxButton.anchor.set(0.5, 0.5);
         this.hitBoxButtonLabel = game.add.text(MAX_X - 50, MAX_Y - 136, DEBUG ? 'ON' : 'OFF', {
             font: '16px Arial',
@@ -531,7 +554,7 @@ var menuState = {
             fill: '#ffffff',
         });
         difficultyLabel.anchor.set(0.5, 0.5);
-        const hardButton = game.add.button(MAX_X - 50, MAX_Y - 50, 'button', this.toggleDifficulty, this, 0, 0, 0);
+        const hardButton = game.add.button(MAX_X - 50, MAX_Y - 50, SPRITE_SHEETS.BUTTON, this.toggleDifficulty, this, 0, 0, 0);
         hardButton.anchor.set(0.5, 0.5);
         this.hardButtonLabel = game.add.text(MAX_X - 50, MAX_Y - 45, EASY_MODE ? 'Easy' : 'Hard', {
             font: '16px Arial',
@@ -919,10 +942,12 @@ var playState = {
     // helper functions
     spawnObjects: function() {
         if (EASY_MODE) {
+            // const patternIdx = 0;
             const patternIdx = Math.floor(Math.random() * easySpawnPatterns.length);
             // spawn patterns defined in external file
             this.renderPattern(easySpawnPatterns[patternIdx]);
         } else {
+            // const patternIdx = 0;
             const patternIdx = Math.floor(Math.random() * spawnPatterns.length);
             // spawn patterns defined in external file
             this.renderPattern(spawnPatterns[patternIdx]);
@@ -1035,13 +1060,6 @@ var playState = {
     }
 };
 
-var endState = {
-
-    create: function() {
-
-    },
-};
-
 
 // Initialize Phaser and main frame
 var game = new Phaser.Game(MAX_X, MAX_Y, Phaser.AUTO);
@@ -1054,8 +1072,7 @@ Phaser.Device.whenReady(function() {
     game.state.add('load', loadState);
     game.state.add('login', loginState);
     game.state.add('menu', menuState);
-    game.state.add('play', playState);
-    game.state.add('end', endState);
+    game.state.add('play', playState);]
     // Start the state to actually start the game
     game.state.start('boot');
 });
