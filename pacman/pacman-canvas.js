@@ -155,6 +155,7 @@ function geronimo() {
 
 	// Manages the whole game ("God Object")
 	function Game() {
+		this.loggedIn = false;
 		this.timer = new Timer();
 		this.refreshRate = 33;		// speed of the game, will increase in higher levels
 		this.running = false;
@@ -350,7 +351,7 @@ function geronimo() {
 				if ($('#playerEmail').val() === undefined || $('#playerEmail').val() === '') {
 					login();
 					console.log("don't start yet");
-				} else {
+				} else if (this.loggedIn) {
 					console.log("start");
 					// start timer
 					this.timer.start();
@@ -1426,6 +1427,7 @@ function geronimo() {
 			} else {
 				$('#form-validater').html("");
 				amplitude.getInstance().setUserId($('#playerEmail').val());
+				game.loggedIn = true;
 				$('#email-form').hide();
 				game.newGame();
 			}
@@ -1688,7 +1690,9 @@ function geronimo() {
 				}
 				break;
 			case 77:	// M pressed
-				game.toggleSound();
+				if (!$('#playerEmail').is(':focus')) {
+					game.toggleSound();
+				}
 				break;
 			case 8:		// Backspace pressed -> show Game Content
 			case 27:	// ESC pressed -> show Game Content
