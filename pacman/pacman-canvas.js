@@ -412,7 +412,7 @@ function geronimo() {
 				this.score.set(0);
 				this.score.refresh(".score");
 				pacman.lives = 3;
-				game.level = 2;
+				game.level = 1;
 				this.refreshLevel(".level");
 				game.gameOver = false;
 				amplitude.logEvent('Game.Started');
@@ -429,10 +429,10 @@ function geronimo() {
 
 			// initalize Ghosts, avoid memory flooding
 			if (pinky === null || pinky === undefined) {
-				pinky = new Ghost("pinky", 7, 5, 'img/pinky.svg', 2, 2);
-				inky = new Ghost("inky", 8, 5, 'img/inky.svg', 13, 11);
-				blinky = new Ghost("blinky", 9, 5, 'img/blinky.svg', 13, 0);
-				clyde = new Ghost("clyde", 10, 5, 'img/clyde.svg', 2, 11);
+				pinky = new Ghost("pinky", 7, 5, 'img/pinky_dm.svg', 2, 2);
+				inky = new Ghost("inky", 8, 5, 'img/inky_dm.svg', 13, 11);
+				blinky = new Ghost("blinky", 9, 5, 'img/blinky_dm.svg', 13, 0);
+				clyde = new Ghost("clyde", 10, 5, 'img/clyde_dm.svg', 2, 11);
 			}
 			else {
 				//console.log("ghosts reset");
