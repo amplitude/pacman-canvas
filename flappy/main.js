@@ -1072,7 +1072,7 @@ Phaser.Device.whenReady(function() {
     game.state.add('load', loadState);
     game.state.add('login', loginState);
     game.state.add('menu', menuState);
-    game.state.add('play', playState);]
+    game.state.add('play', playState);
     // Start the state to actually start the game
     game.state.start('boot');
 });
