@@ -81,10 +81,9 @@ function geronimo() {
 	}
 
 	function addHighscore() {
-		var email = $("#playerEmail").val();
 		$("#highscore-form").html("Saving highscore...");
 		base('Scores').create({
-			'name': email,
+			'name': game.user,
 			'score': game.score.score,
 			'level': game.level
 		}, function (err, record) {
@@ -156,6 +155,7 @@ function geronimo() {
 	// Manages the whole game ("God Object")
 	function Game() {
 		this.loggedIn = false;
+		this.user;
 		this.timer = new Timer();
 		this.refreshRate = 33;		// speed of the game, will increase in higher levels
 		this.running = false;
@@ -1319,7 +1319,7 @@ function geronimo() {
 				//var input = "<div id='highscore-form'><span id='form-validater'></span><input type='text' id='playerName'/><span class='button' id='score-submit'>save</span></div>";
 				game.showMessage("Game over", "Total Score: " + game.score.score);
 				game.gameOver = true;
-				amplitude.getInstance().logEvent('Game Over', { 'score': game.score.score });
+				amplitude.getInstance().logEvent('Game.Ended', { 'score': game.score.score });
 				addHighscore();
 				// $('#playerEmail').focus();
 			}
@@ -1378,8 +1378,12 @@ function geronimo() {
 			$('#form-validater').html("Please enter a valid email<br/>");
 		} else {
 			$('#form-validater').html("");
+			if (game.loggedIn) {
+				addHighscore();
+			}
 			amplitude.getInstance().setUserId($('#playerEmail').val());
 			game.loggedIn = true;
+			game.user = $('#playerEmail').val();
 			$('#email-form').hide();
 			game.newGame();
 		}
@@ -1430,6 +1434,20 @@ function geronimo() {
 			if (e.keyCode == 13) {
 				$('#email-submit').click();
 			}
+		});
+
+		$('#canvas-container').click(function () {
+			console.log('pause game');
+			console.log(game.running);
+			game.pauseResume();
+		});
+
+		$('#canvas-container #email-submit').click(function (e) {
+			e.stopPropagation();
+		});
+
+		$('#canvas-container #playerEmail').click(function (e) {
+			e.stopPropagation();
 		});
 
 		$('body').on('click', '#show-highscore', function () {
