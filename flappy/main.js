@@ -23,11 +23,9 @@ const START_Y = 400;
 const MAX_X = 1200;
 const MAX_Y = 800;
 
-const GAME_VERSION = 'v0.9.9';
+const MUSIC_FADE_DURATION_MILLIS = 1000;
 
-// pipe constants
-const pipeHeight = 50;
-const holeSize = 4;
+const GAME_VERSION = 'v0.9.9';
 
 // spawn constants
 const X_OFFSET_INCR = 50;
@@ -111,7 +109,6 @@ const stageToBackgroundLength = {
 const SPRITES = {
     [VEHICLES.BALLOON]: 'balloon',
     [VEHICLES.SQUARE]: 'secret-ship',
-    PIPE: 'pipe',
     [VEHICLES.PLANE]: 'plane',
     // objects
     COIN_1: '1coin',
@@ -183,19 +180,40 @@ const SHEET_DIMENSIONS = {
     [SPRITE_SHEETS[VEHICLES.ROCKET3]]: [250, 200],
 };
 
-const BUTTON_SHEET_HEIGHT = 50;
-const BUTTON_SHEET_WIDTH = 50;
-
 // Audio
 const AUDIO = {
-    JUMP: 'jump',
     COIN: 'coin',
+    DESERT_MUSIC: 'desert',
+    SKY_MUSIC: 'sky',
+    SPACE_MUSIC: 'space',
 };
 
 const AUDIO_FILES = {
-    [AUDIO.JUMP]: 'jump.wav',
     [AUDIO.COIN]: 'coin.wav',
+    [AUDIO.DESERT_MUSIC]: 'caravan.ogg.ogg',
+    [AUDIO.SKY_MUSIC]: 'water-theme.mp3',
+    [AUDIO.SPACE_MUSIC]: 'star-commander.wav',
 };
+
+const STAGE_MUSIC_REF = {
+    [STAGES.DESERT]: null,
+    [STAGES.SKY]: null,
+    [STAGES.SPACE]: null,
+};
+
+// for storing references to sound effects
+const SOUND_EFFECT_REF = {
+};
+
+const STAGE_MUSIC_FADE_TO_VOLUME = {
+    [STAGES.DESERT]: 1,
+    [STAGES.SKY]: 0.75,
+    [STAGES.SPACE]: 0.5,
+};
+
+const BUTTON_SHEET_HEIGHT = 50;
+const BUTTON_SHEET_WIDTH = 50;
+
 
 // controls falling of main sprite
 const vehicleToGravity = {
@@ -249,7 +267,7 @@ const vehicleToVelocityDelta = {
     [VEHICLES.ROCKET]: 200,
 };
 const vehicleToFuelDrainMillis = {
-    [VEHICLES.BALLOON]: 70,
+    [VEHICLES.BALLOON]: 70, //TODO nerf plz
     [VEHICLES.SQUARE]: 80,
     [VEHICLES.PLANE]: 55,
     [VEHICLES.ROCKET]: 50,
@@ -306,17 +324,19 @@ const preloadSprites = function preloadSprites() {
 
     Object.keys(BACKGROUNDS).forEach(key => {
         game.load.image(BACKGROUNDS[key], 'assets/backgrounds/' + BACKGROUNDS[key] + '.png');
-    })
+    });
 
     Object.keys(SPRITE_SHEETS).forEach(key => {
         const val = SPRITE_SHEETS[key];
         const dimensions = SHEET_DIMENSIONS[val];
         game.load.spritesheet(val, 'assets/' + val + '_sheet.png',dimensions[0], dimensions[1]);
-    })
+    });
+};
 
+const preloadSounds = function preloadSounds() {
     Object.keys(AUDIO_FILES).forEach(key => {
-        game.load.audio(key, 'assets/' + AUDIO_FILES[key]);
-    })
+        game.load.audio(key, 'assets/sounds' + AUDIO_FILES[key]);
+    });
 };
 
 let localHighScore = 0;
@@ -364,45 +384,6 @@ function logHighscore(score, duration, vehicle, stage) {
     return score > lastScore;
 };
 
-// HELPERS
-function addSinglePipe(y, obstacleGroup, data) {
-    // create a pipe at x and y, and add it to the pipe group
-    const pipe = game.add.sprite(MAX_X, y, SPRITES.PIPE);
-    obstacleGroup.add(pipe);
-
-    // enable physics
-    game.physics.arcade.enable(pipe);
-    pipe.body.velocity.x = vehicleToSpeed[baseVehicleType];
-
-    // clean up pipe when not visible
-    pipe.checkWorldBounds = true;
-    pipe.outOfBoundsKill = true;
-
-    // Data for analytics
-    if (data) {
-        pipe.ampData = data;
-    }
-};
-function addPipeColumn(obstacleGroup) {
-    // assume spots > holeSize
-    const spots = Math.floor(MAX_Y / pipeHeight);
-
-    // randomly create a hole
-    const hole = Math.floor(Math.random() * (spots - holeSize));
-
-    for (let i = 0; i < spots; i++) {
-        if (i < hole) {
-            addSinglePipe(i * pipeHeight, obstacleGroup, { type: 'pipe', position: 'top' });
-        }
-        if (i > hole + 3) {
-            addSinglePipe(i * pipeHeight, obstacleGroup, { type: 'pipe', position: 'bottom' });
-        }
-    }
-};
-function addBackground() {
-    return game.add.tileSprite(0, 0, stageToBackgroundLength[selectedStage], MAX_Y, BACKGROUNDS[selectedStage]);
-}
-
 var bootState = {
     create: function() {
         // Set the physics system
@@ -420,12 +401,32 @@ var loadState = {
     preload: function() {
         // could put up a loading screen here
         preloadSprites();
+        preloadSounds();
+
         // Change the background color of the game to blue
         game.stage.backgroundColor = '#22BCE2';
     },
     create: function() {
-        game.state.start('login');
+        // these will loop
+        STAGE_MUSIC_REF[STAGES.DESERT] = game.add.audio(AUDIO.DESERT_MUSIC, 1, true);
+        STAGE_MUSIC_REF[STAGES.SKY] = game.add.audio(AUDIO.SKY_MUSIC, 0.8, true);
+        STAGE_MUSIC_REF[STAGES.SPACE] = game.add.audio(AUDIO.SPACE_MUSIC, 0.5, true);
+
+        SOUND_EFFECT_REF[AUDIO.COIN] = game.add.audio(AUDIO.COIN);
+        SOUND_EFFECT_REF[AUDIO.COIN].allowMultiple = false;
+        // play only first second of coin sound when we use this marker
+        SOUND_EFFECT_REF[AUDIO.COIN].addMarker(AUDIO.COIN, 0, 1);
+
+        const sounds = [
+            STAGE_MUSIC_REF[STAGES.DESERT], STAGE_MUSIC_REF[STAGES.SKY], STAGE_MUSIC_REF[STAGES.SPACE],
+            SOUND_EFFECT_REF[AUDIO.COIN],
+        ];
+
+        game.sound.setDecodedCallback(sounds, this.onLoadFinished, this);
     },
+    onLoadFinished: function() {
+        game.state.start('login');
+    }
 };
 
 // enter name screen
@@ -590,15 +591,6 @@ var menuState = {
         this.hardButtonLabel.anchor.set(0.5, 0.5);
 
         game.add.sprite(0, 0, SPRITES.INSTRUCTIONS);
-        // // start instructions
-        // const startLabel = game.add.text(
-        //     80,
-        //     MAX_Y - 140,
-        //     'Use the Up and Down arrows to change stages\nUse the Left and Right arrows to select a vehicle\nPress Space to start!',
-        //     {
-        //         font: '25px Arial',
-        //         fill: '#ffffff',
-        //     });
 
         const bestLabel = game.add.text(MAX_X - 220, 20, 'Best Score: ' + localHighScore, { font: '25px Arial', fill: '#ffffff'});
 
@@ -615,6 +607,12 @@ var menuState = {
         this.downArrow.onDown.add(this.onDown, this);
         this.spaceKey.onDown.addOnce(this.start, this);
         this.secretKey.onDown.add(this.onSecretKey, this);
+
+        const music = STAGE_MUSIC_REF[selectedStage];
+        if (music && !music.isPlaying) {
+            music.play('', 0, 0, true, true);
+            music.fadeTo(MUSIC_FADE_DURATION_MILLIS, STAGE_MUSIC_FADE_TO_VOLUME[selectedStage]);
+        }
     },
     start: function () {
         var identify = new amplitude.Identify().set('vehicle', vehicleToAnalyticsName[vehicleType]).set('stage', selectedStage).set('vehicle class', vehicleToAnalyticsName[baseVehicleType]);
@@ -655,6 +653,8 @@ var menuState = {
         selectedStageIndex = (selectedStageIndex + 1) % STAGE_LIST.length;
         selectedStage = STAGE_LIST[selectedStageIndex];
 
+        this.changeStageMusic(lastStage, selectedStage);
+
         const eventProperties = {
             direction: 'up',
             lastStage: stageToAnalyticsName[lastStage],
@@ -670,6 +670,8 @@ var menuState = {
             selectedStageIndex += STAGE_LIST.length;
         }
         selectedStage = STAGE_LIST[selectedStageIndex];
+
+        this.changeStageMusic(lastStage, selectedStage);
 
         const eventProperties = {
             direction: 'down',
@@ -709,10 +711,60 @@ var menuState = {
         };
         amplitude.getInstance().logEvent('Cycle Vehicle', eventProperties);
     },
+    changeStageMusic: function(oldStage, newStage) {
+        // stop previous music, start current
+        const oldMusic = STAGE_MUSIC_REF[oldStage];
+        if (oldMusic) {
+            // TODO should do own fade-tween management to do crossfading (without a music stopping race);
+            oldMusic.stop();
+        }
+        const newMusic = STAGE_MUSIC_REF[newStage];
+        if (newMusic) {
+            let start = 0;
+            if (newStage === STAGES.DESERT) {
+                start = 1;
+            }
+            newMusic.play('', start, 0, true, true);
+            newMusic.fadeTo(MUSIC_FADE_DURATION_MILLIS, STAGE_MUSIC_FADE_TO_VOLUME[newStage]);
+        }
+    }
 };
 
 // Create our 'main' state that will contain the game
 var playState = {
+    initVehicle: function(vehicle) {
+        vehicle.ampData = {
+            vehicle: vehicleToAnalyticsName[vehicleType],
+        };
+        game.physics.arcade.enable(vehicle);
+        vehicle.body.gravity.y = vehicleToGravity[baseVehicleType];
+        vehicle.anchor.setTo(0.5, 0.5);
+        if (baseVehicleType === VEHICLES.ROCKET) {
+            // scale down
+            vehicle.scale.setTo(0.5, 0.5);
+        } else if (baseVehicleType === VEHICLES.SQUARE) {
+            // scale down
+            vehicle.scale.setTo(0.25, 0.25);
+        }
+        const bodyModifier = vehicleToBodyModifier[baseVehicleType];
+        if (bodyModifier) {
+            vehicle.body.setSize(bodyModifier[0], bodyModifier[1], bodyModifier[2], bodyModifier[3]);
+        }
+
+    },
+    shutdown: function() {
+        this.game.input.keyboard.removeKey(Phaser.Keyboard.SPACEBAR);
+        this.background.destroy();
+        this.vehicle.destroy();
+        this.obstacles.destroy();
+        this.coins.destroy();
+        this.fuelLabel.destroy();
+        this.bestLabel.destroy();
+        this.labelScore.destroy();
+        this.gameOverImage.destroy();
+        // this might already be destroyed when we stop the timer
+        // this.obstacleTimer.destroy();
+    },
     // set up the game, display sprites, etc.
     create: function() {
         // analytics
@@ -727,74 +779,37 @@ var playState = {
         this.currentPattern = null;
         this.lastPattern = null;
 
-        // SETUP ENTITIES
-        this.background = addBackground();
+        // game constants
+        this.fuelTime = game.time.now;
+        this.currentFuel = maxFuel;
+        this.canRestart = false;
+        this.score = 0;
 
-        // Add audio
-        this.audio = {
-            [AUDIO.COIN]: game.add.audio(AUDIO.COIN),
-            [AUDIO.JUMP]: game.add.audio(AUDIO.JUMP)
-        }
-        this.audio[AUDIO.JUMP].allowMultiple = true;
-        this.audio[AUDIO.JUMP].addMarker(AUDIO.JUMP, 0, 1);
-        this.audio[AUDIO.COIN].allowMultiple = false;
-        this.audio[AUDIO.COIN].addMarker(AUDIO.COIN, 0, 1);
-
-
+        // SETUP ENTITIES, THESE SHOULD BE CLEANED UP WHEN SWITCHING STATES
+        this.background = game.add.tileSprite(0, 0, stageToBackgroundLength[selectedStage], MAX_Y, BACKGROUNDS[selectedStage]);
         // start vehicle at start of screen
-
         if (IS_SPRITE_SHEET[vehicleType]) {
             this.vehicle = game.add.sprite(START_X, START_Y, SPRITE_SHEETS[vehicleType], 0);
         } else {
             this.vehicle = game.add.sprite(START_X, START_Y, SPRITES[vehicleType]);
         }
-
-        this.vehicle.ampData = {
-            vehicle: vehicleToAnalyticsName[vehicleType],
-        };
-
-        // Add physics to the vehicle, needed for: movements, gravity, collisions, etc.
-        game.physics.arcade.enable(this.vehicle);
-        // Add gravity to the vehicle to make it fall
-        this.vehicle.body.gravity.y = vehicleToGravity[baseVehicleType];
-        this.vehicle.anchor.setTo(0.5, 0.5);
-        if (baseVehicleType === VEHICLES.ROCKET) {
-            // scale down
-            this.vehicle.scale.setTo(0.5, 0.5);
-        } else if (baseVehicleType === VEHICLES.SQUARE) {
-            // scale down
-            this.vehicle.scale.setTo(0.25, 0.25);
-        }
-        const bodyModifier = vehicleToBodyModifier[baseVehicleType];
-        if (bodyModifier) {
-            this.vehicle.body.setSize(bodyModifier[0], bodyModifier[1], bodyModifier[2], bodyModifier[3]);
-        }
-
-        // create a group of all obstacles
-        this.obstacles = game.add.group();
-
-        // Call the 'jump' function when the spacekey is hit
-        this.spaceKey = game.input.keyboard.addKey(Phaser.Keyboard.SPACEBAR);
-        this.spaceKey.onDown.add(this.onSpace, this);
-
-        // create groups to hold all obstacles
         this.obstacles = game.add.group();
         this.coins = game.add.group();
-        // fuel is currently unused
-        this.fuel = game.add.group();
-        this.fuelTime = game.time.now;
-        this.currentFuel = maxFuel;
+        // text
         this.fuelLabel = game.add.text(20, MAX_Y - 80, "Fuel: " + maxFuel + "/" + maxFuel, { font: "30px Arial", fill: "#ffffff" });
-
         this.bestLabel = game.add.text(MAX_X - 220, 20, 'Best Score: ' + localHighScore, { font: '25px Arial', fill: '#ffffff'});
+        this.labelScore = game.add.text(20, 20, "Score: 0", { font: "30px Arial", fill: "#ffffff" });
+
+        // INITIALIZE ENTITIES
+        this.initVehicle(this.vehicle);
+
+        // LISTENERS AND TIMERS
+        this.spaceKey = game.input.keyboard.addKey(Phaser.Keyboard.SPACEBAR);
+        this.spaceKey.onDown.add(this.onSpace, this);
 
         // create objects
         this.spawnObjects();
         this.obstacleTimer = game.time.events.loop(vehicleToObstacleTimeout[baseVehicleType], this.spawnObjects, this);
-
-        this.canRestart = false;
-        this.score = 0;
-        this.labelScore = game.add.text(20, 20, "Score: 0", { font: "30px Arial", fill: "#ffffff" });
 
         // GAME OVER
         this.gameOverImage = game.add.sprite(0, 0, SPRITES.GAME_OVER);
@@ -902,21 +917,34 @@ var playState = {
     initSprite: function(sprite) {
         // enable physics
         game.physics.arcade.enable(sprite);
-        // move sprite
-        sprite.body.velocity.x = vehicleToSpeed[baseVehicleType];
         // clean up sprite when not visible
         sprite.checkWorldBounds = true;
         sprite.outOfBoundsKill = true;
     },
 
-    addPipes: function() {
-        addPipeColumn(this.obstacles);
+    // makes or reuses a dead obstacle. assumes keys = sprite names
+    makeOrReuseSprite: function(spriteGroup, x, y, spriteName) {
+        // check if we already have a dead object
+        let sprite = spriteGroup.filter(function(sprite) {
+            return (sprite.key === spriteName) && !sprite.alive;
+        }).first;
+        if (sprite) {
+            // reset obstacle
+            sprite.x = x; sprite.y = y;
+            sprite.alive = true;
+            sprite.exists = true;
+            sprite.visible = true;
+        } else {
+            sprite = game.add.sprite(x, y, spriteName);
+            spriteGroup.add(sprite);
+            this.initSprite(sprite);
+        }
+        return sprite;
     },
     addBar: function(xOffset, yOffset) {
-        const bar = game.add.sprite(MAX_X + xOffset, yOffset, OBSTACLE_SPRITES[selectedStage].LONG);
-        this.obstacles.add(bar);
-        this.initSprite(bar);
+        const bar = this.makeOrReuseSprite(this.obstacles, MAX_X + xOffset, yOffset, OBSTACLE_SPRITES[selectedStage].LONG);
 
+        bar.body.velocity.x = vehicleToSpeed[baseVehicleType];
         bar.body.setSize(400, 50, 0, 0)
         bar.ampData = {
             type: 'long bar',
@@ -924,10 +952,9 @@ var playState = {
         }
     },
     addCloud: function(xOffset, yOffset) {
-        const cloud = game.add.sprite(MAX_X + xOffset, yOffset, OBSTACLE_SPRITES[selectedStage].CLOUD);
-        this.obstacles.add(cloud);
-        this.initSprite(cloud);
+        const cloud = this.makeOrReuseSprite(this.obstacles, MAX_X + xOffset, yOffset, OBSTACLE_SPRITES[selectedStage].CLOUD);
 
+        cloud.body.velocity.x = vehicleToSpeed[baseVehicleType];
         cloud.body.setSize(172, 184, 14, 8);
         if (!EASY_MODE) {
             cloud.scale.setTo(1.2, 1.2);
@@ -939,10 +966,9 @@ var playState = {
     },
     addRock: function(xOffset, yOffset) {
         const yBase = EASY_MODE ? groundCactusY : groundCactusYHard;
-        const rock = game.add.sprite(MAX_X + xOffset, yBase + yOffset, OBSTACLE_SPRITES[selectedStage].ROCK);
-        this.obstacles.add(rock);
-        this.initSprite(rock);
+        const rock = this.makeOrReuseSprite(this.obstacles, MAX_X + xOffset, yBase + yOffset, OBSTACLE_SPRITES[selectedStage].ROCK);
 
+        rock.body.velocity.x = vehicleToSpeed[baseVehicleType];
         rock.body.setSize(156, 164, 12, 8);
         if (!EASY_MODE) {
             rock.scale.setTo(1.3, 1.3);
@@ -953,10 +979,9 @@ var playState = {
         }
     },
     addCoin1: function(xOffset, yOffset) {
-        const coin = game.add.sprite(MAX_X + xOffset, yOffset, SPRITES.COIN_1);
-        this.coins.add(coin);
-        this.initSprite(coin);
+        const coin = this.makeOrReuseSprite(this.coins, MAX_X + xOffset, yOffset, SPRITES.COIN_1);
 
+        coin.body.velocity.x = vehicleToSpeed[baseVehicleType];
         coin.ampData = {
             value: 1,
             type: 'coin',
@@ -964,10 +989,9 @@ var playState = {
         };
     },
     addCoinA: function(xOffset, yOffset) {
-        const coin = game.add.sprite(MAX_X + xOffset, yOffset, SPRITES.COIN_A);
-        this.coins.add(coin);
-        this.initSprite(coin);
+        const coin = this.makeOrReuseSprite(this.coins, MAX_X + xOffset, yOffset, SPRITES.COIN_A);
 
+        coin.body.velocity.x = vehicleToSpeed[baseVehicleType];
         coin.ampData = {
             value: 10,
             type: 'amplitude coin',
@@ -1023,7 +1047,6 @@ var playState = {
     onSpace: function() {
         // Make the vehicle jump
         if (this.vehicle.alive && this.currentFuel > 0) {
-            this.audio[AUDIO.JUMP].play(AUDIO.JUMP);
             // Add a vertical velocity to the vehicle
             this.vehicle.body.velocity.y -= vehicleToVelocityDelta[baseVehicleType];
             this.spaceCount += 1;
@@ -1044,18 +1067,20 @@ var playState = {
             this.bestLabel.text = 'Best Score: ' + localHighScore;
         }
         this.maybeMarkCoin(coinSprite);
-        // const eventProperties = this.getAnalyticsEventProperties();
-        // eventProperties['type'] = coinSprite.ampData.type;
-        // amplitude.getInstance().logEvent('Item Collected', eventProperties);
-        this.audio[AUDIO.COIN].play(AUDIO.COIN);
-        coinSprite.destroy();
+
+        SOUND_EFFECT_REF[AUDIO.COIN].play(AUDIO.COIN);
+
+        // hide coin, but don't kill yet (causes a race?)
+        coinSprite.exists = false;
+        coinSprite.visible = false;
     },
     // Restart the game
     gameOver: function(cause) {
         this.vehicle.alive = false;
         this.vehicle.body.gravity.y = vehicleToGravity[baseVehicleType] / 2;
-        // stop all things
+        // stop all things - this destroys the timer
         game.time.events.remove(this.obstacleTimer);
+
         this.obstacles.forEach((obstacle) => {
             obstacle.body.velocity.x = 0;
         }, this);
@@ -1066,14 +1091,7 @@ var playState = {
         game.time.events.add(Phaser.Timer.SECOND * 1, this.allowRestart, this);
 
         this.gameOverImage.visible = true;
-        // this.gameOverLabel = game.add.text(
-        //     160,
-        //     MAX_Y / 2,
-        //     'Game Over...',
-        //     {
-        //         font: '40px Arial',
-        //         fill: '#ff1111',
-        //     });
+
 
         // analytics + leaderboard
         const eventProperties = this.getAnalyticsEventProperties();
