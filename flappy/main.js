@@ -186,6 +186,17 @@ const SHEET_DIMENSIONS = {
 const BUTTON_SHEET_HEIGHT = 50;
 const BUTTON_SHEET_WIDTH = 50;
 
+// Audio
+const AUDIO = {
+    JUMP: 'jump',
+    COIN: 'coin',
+};
+
+const AUDIO_FILES = {
+    [AUDIO.JUMP]: 'jump.wav',
+    [AUDIO.COIN]: 'coin.wav',
+};
+
 // controls falling of main sprite
 const vehicleToGravity = {
     [VEHICLES.BALLOON]: 600,
@@ -205,7 +216,7 @@ const vehicleAngleOffset = {
     [VEHICLES.SQUARE]: 0,
     [VEHICLES.PLANE]: 70,
     [VEHICLES.ROCKET]: 0,
-}
+};
 
 // x, y, xoffset, y offset
 const vehicleToBodyModifier = {
@@ -301,6 +312,10 @@ const preloadSprites = function preloadSprites() {
         const val = SPRITE_SHEETS[key];
         const dimensions = SHEET_DIMENSIONS[val];
         game.load.spritesheet(val, 'assets/' + val + '_sheet.png',dimensions[0], dimensions[1]);
+    })
+
+    Object.keys(AUDIO_FILES).forEach(key => {
+        game.load.audio(key, 'assets/' + AUDIO_FILES[key]);
     })
 };
 
@@ -715,6 +730,17 @@ var playState = {
         // SETUP ENTITIES
         this.background = addBackground();
 
+        // Add audio
+        this.audio = {
+            [AUDIO.COIN]: game.add.audio(AUDIO.COIN),
+            [AUDIO.JUMP]: game.add.audio(AUDIO.JUMP)
+        }
+        this.audio[AUDIO.JUMP].allowMultiple = true;
+        this.audio[AUDIO.JUMP].addMarker(AUDIO.JUMP, 0, 1);
+        this.audio[AUDIO.COIN].allowMultiple = false;
+        this.audio[AUDIO.COIN].addMarker(AUDIO.COIN, 0, 1);
+
+
         // start vehicle at start of screen
 
         if (IS_SPRITE_SHEET[vehicleType]) {
@@ -997,6 +1023,7 @@ var playState = {
     onSpace: function() {
         // Make the vehicle jump
         if (this.vehicle.alive && this.currentFuel > 0) {
+            this.audio[AUDIO.JUMP].play(AUDIO.JUMP);
             // Add a vertical velocity to the vehicle
             this.vehicle.body.velocity.y -= vehicleToVelocityDelta[baseVehicleType];
             this.spaceCount += 1;
@@ -1020,7 +1047,7 @@ var playState = {
         // const eventProperties = this.getAnalyticsEventProperties();
         // eventProperties['type'] = coinSprite.ampData.type;
         // amplitude.getInstance().logEvent('Item Collected', eventProperties);
-
+        this.audio[AUDIO.COIN].play(AUDIO.COIN);
         coinSprite.destroy();
     },
     // Restart the game
