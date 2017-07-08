@@ -4,11 +4,13 @@ flappy
 a flappy-bird/jetpack-joyride like game. uses phaser to run
 
 
-Credits
+Credits - Music
 =============
-
-yd for the desert stage music
+"Desert Theme" by yd
 https://opengameart.org/users/yd
 
-doppelganger for the sky stage music
+"Underwater Theme" by Cleyton Kauffman
 https://opengameart.org/users/doppelganger
+
+"Hypnotic Puzzle 4" by Eric Matyas
+www.soundimage.org

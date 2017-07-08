@@ -23,9 +23,7 @@ const START_Y = 400;
 const MAX_X = 1200;
 const MAX_Y = 800;
 
-const MUSIC_FADE_DURATION_MILLIS = 1000;
-
-const GAME_VERSION = 'v0.9.9';
+const GAME_VERSION = 'v1.0.0';
 
 // spawn constants
 const X_OFFSET_INCR = 50;
@@ -192,7 +190,7 @@ const AUDIO_FILES = {
     [AUDIO.COIN]: 'coin.wav',
     [AUDIO.DESERT_MUSIC]: 'caravan.ogg.ogg',
     [AUDIO.SKY_MUSIC]: 'water-theme.mp3',
-    [AUDIO.SPACE_MUSIC]: 'star-commander.wav',
+    [AUDIO.SPACE_MUSIC]: 'Hypnotic-Puzzle4.mp3',
 };
 
 const STAGE_MUSIC_REF = {
@@ -200,6 +198,8 @@ const STAGE_MUSIC_REF = {
     [STAGES.SKY]: null,
     [STAGES.SPACE]: null,
 };
+
+const MUSIC_FADE_DURATION_MILLIS = 500;
 
 // for storing references to sound effects
 const SOUND_EFFECT_REF = {
@@ -218,7 +218,7 @@ const BUTTON_SHEET_WIDTH = 50;
 // controls falling of main sprite
 const vehicleToGravity = {
     [VEHICLES.BALLOON]: 600,
-    [VEHICLES.SQUARE]: 1700,
+    [VEHICLES.SQUARE]: 1800,
     [VEHICLES.PLANE]: 1500,
     [VEHICLES.ROCKET]: 1300,
 };
@@ -247,14 +247,14 @@ const vehicleToBodyModifier = {
 // controls speed of scrolling
 const vehicleToSpeed = {
     [VEHICLES.BALLOON]: -200,
-    [VEHICLES.SQUARE]: -420,
+    [VEHICLES.SQUARE]: -500,
     [VEHICLES.PLANE]: -300,
     [VEHICLES.ROCKET]: -350,
 };
 
 const vehicleToObstacleTimeout = {
     [VEHICLES.BALLOON]: 7500,
-    [VEHICLES.SQUARE]: 3500,
+    [VEHICLES.SQUARE]: 3000,
     [VEHICLES.PLANE]: 5000,
     [VEHICLES.ROCKET]: 4500,
 };
@@ -267,9 +267,9 @@ const vehicleToVelocityDelta = {
     [VEHICLES.ROCKET]: 200,
 };
 const vehicleToFuelDrainMillis = {
-    [VEHICLES.BALLOON]: 70, //TODO nerf plz
+    [VEHICLES.BALLOON]: 65,
     [VEHICLES.SQUARE]: 80,
-    [VEHICLES.PLANE]: 55,
+    [VEHICLES.PLANE]: 65,
     [VEHICLES.ROCKET]: 50,
 }
 
@@ -335,7 +335,7 @@ const preloadSprites = function preloadSprites() {
 
 const preloadSounds = function preloadSounds() {
     Object.keys(AUDIO_FILES).forEach(key => {
-        game.load.audio(key, 'assets/sounds' + AUDIO_FILES[key]);
+        game.load.audio(key, 'assets/sounds/' + AUDIO_FILES[key]);
     });
 };
 
@@ -355,6 +355,7 @@ let selectedStage = STAGE_LIST[selectedStageIndex];
 // let selectedStage = STAGES.DESERT;
 let DEBUG = false;
 let EASY_MODE = true;
+let MUTED = false;
 
 function isValidEmail(email) {
     var re = /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
@@ -415,7 +416,7 @@ var loadState = {
         SOUND_EFFECT_REF[AUDIO.COIN] = game.add.audio(AUDIO.COIN);
         SOUND_EFFECT_REF[AUDIO.COIN].allowMultiple = false;
         // play only first second of coin sound when we use this marker
-        SOUND_EFFECT_REF[AUDIO.COIN].addMarker(AUDIO.COIN, 0, 1);
+        SOUND_EFFECT_REF[AUDIO.COIN].addMarker(AUDIO.COIN, 0, 1, 0.3);
 
         const sounds = [
             STAGE_MUSIC_REF[STAGES.DESERT], STAGE_MUSIC_REF[STAGES.SKY], STAGE_MUSIC_REF[STAGES.SPACE],
@@ -506,7 +507,35 @@ var loginState = {
 
 // screen to select a vehicle
 var menuState = {
+    shutdown: function() {
+        // cleanup
+        this.backgrounds.forEach((background) => {
+            background.destroy();
+        });
+        this.titleLabel.destroy();
+        this.instructions.destroy();
+        this.vehicles.forEach((vehicle) => {
+            vehicle.destroy();
+        });
+        this.hitBoxLabel.destroy();
+        this.hitBoxButton.destroy();
+        this.hitBoxButtonLabel.destroy();
+        this.difficultyLabel.destroy();
+        this.hardButton.destroy();
+        this.hardButtonLabel.destroy();
+        this.instructions.destroy();
+        this.bestLabel.destroy();
+
+        this.game.input.keyboard.removeKey(Phaser.Keyboard.SPACEBAR);
+        this.game.input.keyboard.removeKey(Phaser.Keyboard.LEFT);
+        this.game.input.keyboard.removeKey(Phaser.Keyboard.RIGHT);
+        this.game.input.keyboard.removeKey(Phaser.Keyboard.UP);
+        this.game.input.keyboard.removeKey(Phaser.Keyboard.DOWN);
+        this.game.input.keyboard.removeKey(Phaser.Keyboard.A);
+        this.game.input.keyboard.removeKey(Phaser.Keyboard.M);
+    },
     create: function() {
+        // ENTITIES
         this.backgrounds = STAGE_LIST.map(stage => {
             background = game.add.tileSprite(0, 0, stageToBackgroundLength[stage], MAX_Y, BACKGROUNDS[stage]);
             background.stageType = stage;
@@ -517,7 +546,7 @@ var menuState = {
         });
 
         // Title instructions
-        const titleLabel = game.add.text(
+        this.titleLabel = game.add.text(
             80,
             20,
             'Data Explorer',
@@ -526,7 +555,7 @@ var menuState = {
                 fill: '#ffffff',
             });
         // instructions
-        const instructions = game.add.text(
+        this.instructions = game.add.text(
             80,
             80,
             'Help Datamonster soar through the skies!\nTap or hold space to fly higher.',
@@ -563,13 +592,13 @@ var menuState = {
         });
 
         // HITBOX TOGGLE
-        const hitBoxLabel = game.add.text(MAX_X - 170, MAX_Y - 140, 'Show Hitboxes:',  {
+        this.hitBoxLabel = game.add.text(MAX_X - 170, MAX_Y - 140, 'Show Hitboxes:',  {
             font: '24px Arial',
             fill: '#ffffff',
         });
-        hitBoxLabel.anchor.set(0.5, 0.5);
-        const hitBoxButton = game.add.button(MAX_X - 50, MAX_Y - 140, SPRITE_SHEETS.BUTTON, this.toggleDebug, this, 0, 0, 0);
-        hitBoxButton.anchor.set(0.5, 0.5);
+        this.hitBoxLabel.anchor.set(0.5, 0.5);
+        this.hitBoxButton = game.add.button(MAX_X - 50, MAX_Y - 140, SPRITE_SHEETS.BUTTON, this.toggleDebug, this, 0, 0, 0);
+        this.hitBoxButton.anchor.set(0.5, 0.5);
         this.hitBoxButtonLabel = game.add.text(MAX_X - 50, MAX_Y - 136, DEBUG ? 'ON' : 'OFF', {
             font: '16px Arial',
             fill: '#ffffff',
@@ -577,22 +606,22 @@ var menuState = {
         this.hitBoxButtonLabel.anchor.set(0.5, 0.5);
 
         // DIFFICULTY TOGGLE
-        const difficultyLabel = game.add.text(MAX_X - 140, MAX_Y - 50, 'Difficulty:',  {
+        this.difficultyLabel = game.add.text(MAX_X - 140, MAX_Y - 50, 'Difficulty:',  {
             font: '24px Arial',
             fill: '#ffffff',
         });
-        difficultyLabel.anchor.set(0.5, 0.5);
-        const hardButton = game.add.button(MAX_X - 50, MAX_Y - 50, SPRITE_SHEETS.BUTTON, this.toggleDifficulty, this, 0, 0, 0);
-        hardButton.anchor.set(0.5, 0.5);
+        this.difficultyLabel.anchor.set(0.5, 0.5);
+        this.hardButton = game.add.button(MAX_X - 50, MAX_Y - 50, SPRITE_SHEETS.BUTTON, this.toggleDifficulty, this, 0, 0, 0);
+        this.hardButton.anchor.set(0.5, 0.5);
         this.hardButtonLabel = game.add.text(MAX_X - 50, MAX_Y - 45, EASY_MODE ? 'Easy' : 'Hard', {
             font: '16px Arial',
             fill: '#ffffff',
         });
         this.hardButtonLabel.anchor.set(0.5, 0.5);
 
-        game.add.sprite(0, 0, SPRITES.INSTRUCTIONS);
+        this.instructions =game.add.sprite(0, 0, SPRITES.INSTRUCTIONS);
 
-        const bestLabel = game.add.text(MAX_X - 220, 20, 'Best Score: ' + localHighScore, { font: '25px Arial', fill: '#ffffff'});
+        this.bestLabel = game.add.text(MAX_X - 220, 20, 'Best Score: ' + localHighScore, { font: '25px Arial', fill: '#ffffff'});
 
         this.leftArrow = game.input.keyboard.addKey(Phaser.Keyboard.LEFT);
         this.rightArrow = game.input.keyboard.addKey(Phaser.Keyboard.RIGHT);
@@ -600,6 +629,7 @@ var menuState = {
         this.downArrow = game.input.keyboard.addKey(Phaser.Keyboard.DOWN);
         this.spaceKey = game.input.keyboard.addKey(Phaser.Keyboard.SPACEBAR);
         this.secretKey = game.input.keyboard.addKey(Phaser.Keyboard.A);
+        this.muteKey = game.input.keyboard.addKey(Phaser.Keyboard.M);
 
         this.leftArrow.onDown.add(this.onLeft, this);
         this.rightArrow.onDown.add(this.onRight, this);
@@ -607,6 +637,7 @@ var menuState = {
         this.downArrow.onDown.add(this.onDown, this);
         this.spaceKey.onDown.addOnce(this.start, this);
         this.secretKey.onDown.add(this.onSecretKey, this);
+        this.muteKey.onDown.add(this.onMute, this);
 
         const music = STAGE_MUSIC_REF[selectedStage];
         if (music && !music.isPlaying) {
@@ -719,15 +750,25 @@ var menuState = {
             oldMusic.stop();
         }
         const newMusic = STAGE_MUSIC_REF[newStage];
-        if (newMusic) {
-            let start = 0;
-            if (newStage === STAGES.DESERT) {
-                start = 1;
-            }
-            newMusic.play('', start, 0, true, true);
+        if (newMusic && !MUTED) {
+            newMusic.play(null, 0, 0, true, true);
             newMusic.fadeTo(MUSIC_FADE_DURATION_MILLIS, STAGE_MUSIC_FADE_TO_VOLUME[newStage]);
         }
-    }
+    },
+
+    onMute: function() {
+        MUTED = !MUTED;
+
+        const music = STAGE_MUSIC_REF[selectedStage];
+        if (music) {
+            if (MUTED) {
+                music.stop();
+            } else {
+                music.play(null, 0, 0, true, true);
+                music.fadeTo(MUSIC_FADE_DURATION_MILLIS, STAGE_MUSIC_FADE_TO_VOLUME[selectedStage]);
+            }
+        }
+    },
 };
 
 // Create our 'main' state that will contain the game
@@ -1068,7 +1109,9 @@ var playState = {
         }
         this.maybeMarkCoin(coinSprite);
 
-        SOUND_EFFECT_REF[AUDIO.COIN].play(AUDIO.COIN);
+        if (!MUTED) {
+            SOUND_EFFECT_REF[AUDIO.COIN].play(AUDIO.COIN);
+        }
 
         // hide coin, but don't kill yet (causes a race?)
         coinSprite.exists = false;
