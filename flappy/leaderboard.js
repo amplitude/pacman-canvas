@@ -23,10 +23,11 @@ function getHighscore() {
         sort: [
             { field: 'score', direction: 'desc' }
         ],
-        maxRecords: 20
+        maxRecords: 100,
     }).eachPage(function page(records, fetchNextPage) {
         records.forEach(function (record) {
-            $('#hidden-list').append("<li>" + record.get('name') + "<span id='score'>" + record.get('score') + "</span></li>");
+            $('#hidden-list').append("<li class='list-row'><div class='name'>" + record.get('name') + "</div><div class='score'>" + record.get('score') +
+                "</div><div class='vehicle'>" + record.get('vehicle') + "</div></li>");
         });
         fetchNextPage();
     }, function done(error) {
