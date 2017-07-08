@@ -817,8 +817,8 @@ var playState = {
         this.coinCount = 0;
         this.bigCoinCount = 0;
 
-        this.currentPattern = null;
-        this.lastPattern = null;
+        this.currentPattern = -1;
+        this.lastPattern = -1;
 
         // game constants
         this.fuelTime = game.time.now;
@@ -857,18 +857,6 @@ var playState = {
         this.gameOverCropRect = new Phaser.Rectangle(0, 0, this.gameOverImage.width, this.gameOverImage.height - 350);
         this.gameOverImage.crop(this.gameOverCropRect);
         this.gameOverImage.visible = false;
-
-        // analytics
-        this.startTime = game.time.now;
-        this.spaceCount = 0;
-        this.skyCactusCount = 0;
-        this.groundCactusCount = 0;
-        this.barCount = 0;
-        this.coinCount = 0;
-        this.bigCoinCount = 0;
-
-        this.currentPattern = null;
-        this.lastPattern = null;
     },
 
     update: function() {
@@ -1187,8 +1175,8 @@ var playState = {
             'spacebar down count': this.spaceCount,
             'hitboxes on': DEBUG,
             'difficulty': EASY_MODE ? 'easy' : 'hard',
-            'last pattern index': this.lastPattern || -1,
-            'current pattern index': this.currentPattern || -1,
+            'last pattern index': this.lastPattern,
+            'current pattern index': this.currentPattern,
         };
     }
 };
