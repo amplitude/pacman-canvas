@@ -487,7 +487,7 @@ var loginState = {
     onSetUserName: function(name) {
         if (isValidEmail(name)) {
             amplitude.getInstance().setUserId(name);
-            var identify = new amplitude.Identify().set('version', GAME_VERSION);
+            var identify = new amplitude.Identify().set('version', GAME_VERSION).set('user name', name);
             amplitude.getInstance().identify(identify);
 
             userName = name;
