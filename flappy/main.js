@@ -23,7 +23,7 @@ const START_Y = 400;
 const MAX_X = 1200;
 const MAX_Y = 800;
 
-const GAME_VERSION = 'v1.0.0';
+const GAME_VERSION = 'v1.0.1';
 
 // spawn constants
 const X_OFFSET_INCR = 50;
@@ -269,7 +269,7 @@ const vehicleToVelocityDelta = {
 const vehicleToFuelDrainMillis = {
     [VEHICLES.BALLOON]: 65,
     [VEHICLES.SQUARE]: 80,
-    [VEHICLES.PLANE]: 65,
+    [VEHICLES.PLANE]: 58,
     [VEHICLES.ROCKET]: 50,
 }
 

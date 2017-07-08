@@ -1,10 +1,15 @@
 PatchNotes
 =============
 
+v1.0.1
+=============
+
+hotfix - minor nerf to Paper Airplane fuel efficiency.
+
 v1.0.0
 =============
 
-Minor Nerfs to Hot Air Balloon fuel efficiency.
+Minor nerfs to Hot Air Balloon fuel efficiency.
 Buff to Paper Airplane fuel efficiency.
 
 
