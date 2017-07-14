@@ -34,7 +34,7 @@ const groundCactusYHard = 545;
 
 const maxFuel = 500;
 
-const IS_PROD = false;
+const IS_PROD = true;
 
 // should map to keys in sprite file names
 const VEHICLES = {
