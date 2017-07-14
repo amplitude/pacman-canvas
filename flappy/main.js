@@ -1,3 +1,4 @@
+const IS_PROD = false;
 
 (function(e,t){var n=e.amplitude||{_q:[],_iq:{}};var r=t.createElement("script");r.type="text/javascript";
 r.async=true;r.src="https://d24n15hnbwhuhn.cloudfront.net/libs/amplitude-3.4.0-min.gz.js";
@@ -33,8 +34,6 @@ const groundCactusY = 610;
 const groundCactusYHard = 545;
 
 const maxFuel = 500;
-
-const IS_PROD = false;
 
 // should map to keys in sprite file names
 const VEHICLES = {
@@ -411,12 +410,26 @@ var bootState = {
 var loadState = {
     // preload all assets here
     preload: function() {
+        // Change the background color of the game to blue
+        game.stage.backgroundColor = '#22BCE2';
+        const loadingPrompt = game.add.text(MAX_X / 2, MAX_Y / 2, 'Loading...', {
+            font: '30px Arial',
+            fill: '#ffffff',
+        });
+        this.loadingPrompt = loadingPrompt;
+        this.loadingPrompt.anchor.set(0.5, 0.5);
+
         // could put up a loading screen here
         preloadSprites();
         preloadSounds();
-
-        // Change the background color of the game to blue
-        game.stage.backgroundColor = '#22BCE2';
+        this.loadingPrompt.text = 'Folding airplane...';
+        setTimeout(() => { loadingPrompt.text = 'Inflating balloon...' }, 800);
+        setTimeout(() => { loadingPrompt.text = 'Fueling rocket...' }, 1600);
+        setTimeout(() => { loadingPrompt.text = 'Minting coins...' }, 2400);
+        setTimeout(() => { loadingPrompt.text = 'Initializing physics...' }, 3200);
+        setTimeout(() => { loadingPrompt.text = 'Doing analytics...' }, 4000);
+        setTimeout(() => { loadingPrompt.text = 'Inserting easter egg...' }, 4800);
+        setTimeout(() => { loadingPrompt.text = 'Loading stages...' }, 5200);
     },
     create: function() {
         // these will loop
@@ -444,7 +457,7 @@ var loadState = {
     },
     onLoadFinished: function() {
         game.state.start('login');
-    }
+    },
 };
 
 // enter name screen
