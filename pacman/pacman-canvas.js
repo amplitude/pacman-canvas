@@ -1,16 +1,43 @@
 /*-------------------------------------------------------------------
 
-	___________    ____   _____ _____    ____  
-	\____ \__  \ _/ ___\ /     \\__  \  /    \ 
+	___________    ____   _____ _____    ____
+	\____ \__  \ _/ ___\ /     \\__  \  /    \
 	|  |_> > __ \\  \___|  Y Y  \/ __ \|   |  \
 	|   __(____  /\___  >__|_|  (____  /___|  /
 	|__|       \/     \/      \/     \/     \/ .platzh1rsch.ch
-	
+
 	author: platzh1rsch		(www.platzh1rsch.ch)
-	
+
 -------------------------------------------------------------------*/
 
 "use strict";
+
+// CONSTANTS + LOGIC FOR RENDERING
+const CELL_PIXELS = 30; // number of pixels in a cell - should be a multiple of 2
+const WALL_PADDING = 8; // padding given to a wall
+const DOOR_Y_OFFSET = 12; // top padding of door line from top of grid cells
+const DOOR_THICKNESS = 1;
+
+// fixed map size (for now) - should match up with map.json file being loaded
+const GRID_MAX_X = 18;
+const GRID_MAX_Y = 13;
+
+// helper for building a wall, 0,0 is the top left corner
+const buildWall = function buildWall(context, gridX, gridY, width, height) {
+	// we want to add padding inside wall rectangles
+	const startX = gridX * CELL_PIXELS + WALL_PADDING;
+	const startY = gridY * CELL_PIXELS + WALL_PADDING;
+	const pixelWidth = width * CELL_PIXELS - (2 * WALL_PADDING);
+	const pixelHeight = height * CELL_PIXELS - (2 * WALL_PADDING);
+	context.fillRect(startX, startY, pixelWidth, pixelHeight);
+}
+
+// helpers for converting from grids to pixels
+const toGridPos = function (pixelPos) {
+	return ((pixelPos % CELL_PIXELS) / CELL_PIXELS);
+};
+
+
 
 function geronimo() {
 
@@ -96,13 +123,6 @@ function geronimo() {
 		});
 	}
 
-	function buildWall(context, gridX, gridY, width, height) {
-		console.log("BuildWall");
-		width = width * 2 - 1;
-		height = height * 2 - 1;
-		context.fillRect(pacman.radius / 2 + gridX * 2 * pacman.radius, pacman.radius / 2 + gridY * 2 * pacman.radius, width * pacman.radius, height * pacman.radius);
-	}
-
 	function between(x, min, max) {
 		return x >= min && x <= max;
 	}
@@ -172,23 +192,13 @@ function geronimo() {
 		this.gameOver = false;
 		this.canvas = $("#myCanvas").get(0);
 		this.wallColor = "#00A7CF";
-		this.width = this.canvas.width;
-		this.height = this.canvas.height;
+		this.gridWidth = GRID_MAX_X;
+		this.width = CELL_PIXELS * GRID_MAX_X;
+		this.gridHeight = GRID_MAX_Y;
+		this.height = CELL_PIXELS * GRID_MAX_Y;
 
 		this.pillSize = 3;
-		this.powerpillSizeMin = 2;
-		this.powerpillSizeMax = 6;
-		this.powerpillSizeCurrent = this.powerpillSizeMax;
-		this.powerPillAnimationCounter = 0;
-		this.nextPowerPillSize = function () {
-			/*if (this.powerPillAnimationCounter === 3) {
-				this.powerPillAnimationCounter = 0;
-				this.powerpillSizeCurrent = this.powerpillSizeMin + this.powerpillSizeCurrent % (this.powerpillSizeMax-this.powerpillSizeMin);
-			} else {
-				this.powerPillAnimationCounter++;
-			}*/
-			return this.powerpillSizeCurrent;
-		};
+		this.powerpillSize = 6;
 
 		this.ghostFrightened = false;
 		this.ghostFrightenedTimer = 240;
@@ -247,14 +257,14 @@ function geronimo() {
 			}
 		};
 
-		this.getMapContent = function (x, y) {
-			var maxX = game.width / 30 - 1;
-			var maxY = game.height / 30 - 1;
-			if (x < 0) x = maxX + x;
-			if (x > maxX) x = x - maxX;
-			if (y < 0) y = maxY + y;
-			if (y > maxY) y = y - maxY;
-			return this.map.posY[y].posX[x].type;
+		this.getMapContent = function (gridX, gridY) {
+			const maxGridX = this.maxGridX;
+			const maxGridY = this.maxGridY;
+			if (gridX < 0) gridX = maxGridX + gridX;
+			if (gridX > maxGridX) gridX = gridX - maxX;
+			if (gridY < 0) gridY = maxGridY + gridY;
+			if (gridY > maxGridY) gridY = gridY - maxGridY;
+			return this.map.posY[gridY].posX[gridX].type;
 		};
 
 		this.setMapContent = function (x, y, val) {
@@ -458,17 +468,14 @@ function geronimo() {
 		this.gameover = function () { };
 
 		this.toPixelPos = function (gridPos) {
-			return gridPos * 30;
-		};
-
-		this.toGridPos = function (pixelPos) {
-			return ((pixelPos % 30) / 30);
+			return gridPos * CELL_PIXELS;
 		};
 
 		/* ------------ Start Pre-Build Walls  ------------ */
 		this.buildWalls = function () {
 			if (this.ghostMode === 0) game.wallColor = "#00A7CF";
 			else game.wallColor = "Red";
+			// TODO(kevin) - figure out where this is actually being created and how its tied to the game's canvas
 			canvas_walls = document.createElement('canvas');
 			canvas_walls.width = game.canvas.width;
 			canvas_walls.height = game.canvas.height;
@@ -494,8 +501,8 @@ function geronimo() {
 			buildWall(context_walls, 11, 5, 1, 2);
 			buildWall(context_walls, 6, 6, 6, 1);
 
-			// ghost base door
-			context_walls.fillRect(8 * 2 * pacman.radius, pacman.radius / 2 + 4 * 2 * pacman.radius + 5, 4 * pacman.radius, 1);
+			// ghost base door - no left-right padding, place at wall padding (thickness 1)
+			context_walls.fillRect(8 * CELL_PIXELS, 4 * CELL_PIXELS + DOOR_Y_OFFSET, 2 * CELL_PIXELS, DOOR_THICKNESS);
 
 			// single blocks
 			buildWall(context_walls, 4, 0, 1, 2);
@@ -587,7 +594,7 @@ function geronimo() {
 	var up = new Direction("up", 1.75, 1.25, 0, -1);		// UP
 	var left = new Direction("left", 1.25, 0.75, -1, 0);	// LEFT
 	var down = new Direction("down", 0.75, 0.25, 0, 1);		// DOWN
-	var right = new Direction("right", 0.25, 1.75, 1, 0);	// 
+	var right = new Direction("right", 0.25, 1.75, 1, 0);	//
 	/*var directions = [{},{},{},{}];
 	directions[0] = up;
 	directions[1] = down;
@@ -611,10 +618,10 @@ function geronimo() {
 	// Ghost object in Constructor notation
 	function Ghost(name, gridPosX, gridPosY, image, gridBaseX, gridBaseY) {
 		this.name = name;
-		this.posX = gridPosX * 30;
-		this.posY = gridPosY * 30;
-		this.startPosX = gridPosX * 30;
-		this.startPosY = gridPosY * 30;
+		this.posX = gridPosX * CELL_PIXELS;
+		this.posY = gridPosY * CELL_PIXELS;
+		this.startPosX = gridPosX * CELL_PIXELS;
+		this.startPosY = gridPosY * CELL_PIXELS;
 		this.gridBaseX = gridBaseX;
 		this.gridBaseY = gridBaseY;
 		this.speed = game.ghostSpeedNormal;
@@ -668,22 +675,22 @@ function geronimo() {
 		this.radius = pacman.radius;
 		this.draw = function (context) {
 			if (this.dead) {
-				context.drawImage(this.deadImg, this.posX, this.posY, 2 * this.radius, 2 * this.radius);
+				context.drawImage(this.deadImg, this.posX, this.posY, CELL_PIXELS, CELL_PIXELS);
 			}
 			else if (this.dazzled) {
 				if (pacman.beastModeTimer < 50 && pacman.beastModeTimer % 8 > 1) {
-					context.drawImage(this.dazzleImg2, this.posX, this.posY, 2 * this.radius, 2 * this.radius);
+					context.drawImage(this.dazzleImg2, this.posX, this.posY, CELL_PIXELS, CELL_PIXELS);
 				} else {
-					context.drawImage(this.dazzleImg, this.posX, this.posY, 2 * this.radius, 2 * this.radius);
+					context.drawImage(this.dazzleImg, this.posX, this.posY, CELL_PIXELS, CELL_PIXELS);
 				}
 			}
-			else context.drawImage(this.image, this.posX, this.posY, 2 * this.radius, 2 * this.radius);
+			else context.drawImage(this.image, this.posX, this.posY, CELL_PIXELS, CELL_PIXELS);
 		}
 		this.getCenterX = function () {
-			return this.posX + this.radius;
+			return this.posX + CELL_PIXELS / 2;
 		}
 		this.getCenterY = function () {
-			return this.posY + this.radius;
+			return this.posY + CELL_PIXELS / 2;
 		}
 
 		this.reset = function () {
@@ -729,12 +736,13 @@ function geronimo() {
 					else this.stop = false;
 				}
 
-				if ((this.getGridPosY() == 5) && this.inGrid()) {
+				if ((this.getGridPosY() == 5) && this.isAlignedToGrid(this.posX, this.posY)) {
 					if ((this.getGridPosX() == 7)) this.setDirection(right);
 					if ((this.getGridPosX() == 8) || this.getGridPosX() == 9) this.setDirection(up);
 					if ((this.getGridPosX() == 10)) this.setDirection(left);
 				}
-				if ((this.getGridPosY() == 4) && ((this.getGridPosX() == 8) || (this.getGridPosX() == 9)) && this.inGrid()) {
+				// left ghost house ghost house
+				if ((this.getGridPosY() == 4) && ((this.getGridPosX() == 8) || (this.getGridPosX() == 9)) && this.isAlignedToGrid(this.posX, this.posY)) {
 					console.log("ghosthouse -> false");
 					this.ghostHouse = false;
 				}
@@ -745,6 +753,7 @@ function geronimo() {
 				this.posX += this.speed * this.dirX;
 				this.posY += this.speed * this.dirY;
 
+				// TODO(kevin) - this seems wrong - also repeated
 				// Check if out of canvas
 				if (this.posX >= game.width - this.radius) this.posX = this.speed - this.radius;
 				if (this.posX <= 0 - this.radius) this.posX = game.width - this.speed - this.radius;
@@ -756,7 +765,7 @@ function geronimo() {
 		this.checkCollision = function () {
 
 			/* Check Back to Home */
-			if (this.dead && (this.getGridPosX() == this.startPosX / 30) && (this.getGridPosY() == this.startPosY / 30)) this.reset();
+			if (this.dead && this.getGridPosX() == toGridPos(this.startPosX) && this.getGridPosY() == toGridPos(this.startPosY)) this.reset();
 			else {
 
 				/* Check Ghost / Pacman Collision			*/
@@ -784,8 +793,8 @@ function geronimo() {
 
 			// get target
 			if (this.dead) {			// go Home
-				var tX = this.startPosX / 30;
-				var tY = this.startPosY / 30;
+				var tX = this.startPosX / CELL_PIXELS;
+				var tY = this.startPosY / CELL_PIXELS;
 			}
 			else if ((game.ghostMode == 0 || game.level == 7) && (game.level != 6 || game.level < 8)) {			// Scatter Mode
 				var tX = this.gridBaseX;
@@ -801,6 +810,7 @@ function geronimo() {
 						var pdirX = pdir.dirX == 0 ? - pdir.dirY : pdir.dirX;
 						var pdirY = pdir.dirY == 0 ? - pdir.dirX : pdir.dirY;
 
+						// TODO(kevin) - game.width / pacman.radius seems wrong - width of map in cells should be game.width / (2 * pacman.radius)
 						var tX = (pacman.getGridPosX() + pdirX * 4) % (game.width / pacman.radius + 1);
 						var tY = (pacman.getGridPosY() + pdirY * 4) % (game.height / pacman.radius + 1);
 						break;
@@ -811,7 +821,7 @@ function geronimo() {
 						var tY = pacman.getGridPosY();
 						break;
 
-					// target: 
+					// target:
 					case "inky":
 						var tX = pacman.getGridPosX() + 2 * pacman.direction.dirX;
 						var tY = pacman.getGridPosY() + 2 * pacman.direction.dirY;
@@ -1023,18 +1033,23 @@ function geronimo() {
 		this.directionWatcher = new directionWatcher();
 		this.getNextDirection = function () { console.log("Figure getNextDirection"); };
 		this.checkDirectionChange = function () {
-			if (this.inGrid() && (this.directionWatcher.get() == null)) this.getNextDirection();
-			if ((this.directionWatcher.get() != null) && this.inGrid()) {
+			// only change directions when aligned to the grid
+			if (!this.isAlignedToGrid(this.posX, this.posY)) {
+				return;
+			}
+			if (this.directionWatcher.get() == null) {
+				this.getNextDirection();
+			} else {
 				//console.log("changeDirection to "+this.directionWatcher.get().name);
 				this.setDirection(this.directionWatcher.get());
 				this.directionWatcher.set(null);
 			}
-
 		}
 
 
-		this.inGrid = function () {
-			if ((this.posX % (2 * this.radius) === 0) && (this.posY % (2 * this.radius) === 0)) return true;
+		// TODO(kevin) - this function seems wrong
+		this.isAlignedToGrid = function (posX, posY) {
+			if ((posX % CELL_PIXELS === 0) && (posY % 2 * CELL_PIXELS === 0)) return true;
 			return false;
 		}
 		this.getOppositeDirection = function () {
@@ -1044,11 +1059,11 @@ function geronimo() {
 			else if (this.direction.equals(left)) return right;
 		}
 		this.move = function () {
-
 			if (!this.stop) {
 				this.posX += this.speed * this.dirX;
 				this.posY += this.speed * this.dirY;
 
+				// TODO(kevin) - this seems wrong
 				// Check if out of canvas
 				if (this.posX >= game.width - this.radius) this.posX = this.speed - this.radius;
 				if (this.posX <= 0 - this.radius) this.posX = game.width - this.speed - this.radius;
@@ -1060,10 +1075,10 @@ function geronimo() {
 		this.start = function () { this.stop = false; }
 
 		this.getGridPosX = function () {
-			return (this.posX - (this.posX % 30)) / 30;
+			return (this.posX - (this.posX % CELL_PIXELS)) / CELL_PIXELS;
 		}
 		this.getGridPosY = function () {
-			return (this.posY - (this.posY % 30)) / 30;
+			return (this.posY - (this.posY % CELL_PIXELS)) / CELL_PIXELS;
 		}
 		this.setDirection = function (dir) {
 			this.dirX = dir.dirX;
@@ -1080,8 +1095,10 @@ function geronimo() {
 
 	function pacman() {
 		this.radius = 15;
+		// start location
 		this.posX = 0;
-		this.posY = 6 * 2 * this.radius;
+		this.posY = 6 * CELL_PIXELS;
+
 		this.speed = 5;
 		this.angle1 = 0.25;
 		this.angle2 = 1.75;
@@ -1099,10 +1116,10 @@ function geronimo() {
 			this.frozen = false;
 		}
 		this.getCenterX = function () {
-			return this.posX + this.radius;
+			return this.posX + CELL_PIXELS / 2;
 		}
 		this.getCenterY = function () {
-			return this.posY + this.radius;
+			return this.posY + CELL_PIXELS / 2;
 		}
 		this.directionWatcher = new directionWatcher();
 
@@ -1153,6 +1170,7 @@ function geronimo() {
 							s = 10;
 							game.pillCount--;
 						}
+						// remove pill
 						game.map.posY[gridY].posX[gridX].type = "null";
 						game.score.add(s);
 					}
@@ -1164,8 +1182,8 @@ function geronimo() {
 					this.stuckY = this.dirY;
 					pacman.stop();
 					// get out of the wall
-					if ((this.stuckX == 1) && ((this.posX % 2 * this.radius) != 0)) this.posX -= 5;
-					if ((this.stuckY == 1) && ((this.posY % 2 * this.radius) != 0)) this.posY -= 5;
+					if ((this.stuckX == 1) && ((this.posX % CELL_PIXELS) != 0)) this.posX -= 5;
+					if ((this.stuckY == 1) && ((this.posY % CELL_PIXELS) != 0)) this.posY -= 5;
 					if (this.stuckX == -1) this.posX += 5;
 					if (this.stuckY == -1) this.posY += 5;
 				}
@@ -1184,7 +1202,7 @@ function geronimo() {
 
 
 					// only allow direction changes inside the grid
-					if ((this.inGrid())) {
+					if (this.isAlignedToGrid(this.posX, this.posY)) {
 						//console.log("changeDirection to "+directionWatcher.get().name);
 
 						// check if possible to change direction without getting stuck
@@ -1192,10 +1210,10 @@ function geronimo() {
 						console.log("y: " + this.getGridPosY() + " + " + this.directionWatcher.get().dirY);
 						var x = this.getGridPosX() + this.directionWatcher.get().dirX;
 						var y = this.getGridPosY() + this.directionWatcher.get().dirY;
-						if (x <= -1) x = game.width / (this.radius * 2) - 1;
-						if (x >= game.width / (this.radius * 2)) x = 0;
-						if (y <= -1) x = game.height / (this.radius * 2) - 1;
-						if (y >= game.heigth / (this.radius * 2)) y = 0;
+						if (x <= -1) x = game.gridWidth - 1;
+						if (x >= game.gridWidth) x = 0;
+						if (y <= -1) x = game.gridHeight - 1;
+						if (y >= game.gridHeight) y = 0;
 
 						console.log("x: " + x);
 						console.log("y: " + y);
@@ -1287,8 +1305,9 @@ function geronimo() {
 		}
 		this.reset = function () {
 			this.unfreeze();
+			// TODO(kevin) - pull out as startX, startY for pacman
 			this.posX = 0;
-			this.posY = 6 * 2 * this.radius;
+			this.posY = 6 * CELL_PIXELS;
 			this.setDirection(right);
 			this.stop();
 			this.stuckX = 0;
@@ -1326,19 +1345,21 @@ function geronimo() {
 			}
 			game.drawHearts(this.lives);
 		}
-		this.getGridPosX = function () {
-			return (this.posX - (this.posX % 30)) / 30;
-		}
-		this.getGridPosY = function () {
-			return (this.posY - (this.posY % 30)) / 30;
-		}
+
+		// SHOULD BE DUPLICATED FROM `Figure` CLASS
+		// this.getGridPosX = function () {
+		// 	return (this.posX - (this.posX % 30)) / 30;
+		// }
+		// this.getGridPosY = function () {
+		// 	return (this.posY - (this.posY % 30)) / 30;
+		// }
 	}
 	pacman.prototype = new Figure();
 	var pacman = new pacman();
 	game.buildWalls();
 
 
-	// Check if a new cache is available on page load.	 
+	// Check if a new cache is available on page load.
 	function checkAppCache() {
 		console.log('check AppCache');
 		window.applicationCache.addEventListener('updateready', function (e) {
@@ -1545,9 +1566,9 @@ function geronimo() {
 
 
 		/* --------------- GAME INITIALISATION ------------------------------------
-		
+
 			TODO: put this into Game object and change code to accept different setups / levels
-		
+
 		-------------------------------------------------------------------------- */
 
 		game.init(0);
@@ -1576,17 +1597,16 @@ function geronimo() {
 					context.textAlign = "center";
 					context.textBaseline = "middle";
 					var pillNumber = chance.integer({ min: 0, max: 1 });
-					context.fillText(pillNumber, game.toPixelPos(this.col - 1) + pacman.radius, game.toPixelPos(dotPosY - 1) + pacman.radius)
-					// context.arc(game.toPixelPos(this.col - 1) + pacman.radius, game.toPixelPos(dotPosY - 1) + pacman.radius, game.pillSize, 0 * Math.PI, 2 * Math.PI);
+					context.fillText(pillNumber, game.toPixelPos(this.col - 1) + CELL_PIXELS / 2, game.toPixelPos(dotPosY - 1) + CELL_PIXELS / 2)
+					// context.arc(game.toPixelPos(this.col - 1) + CELL_PIXELS / 2, game.toPixelPos(dotPosY - 1) + CELL_PIXELS / 2f, game.pillSize, 0 * Math.PI, 2 * Math.PI);
 					context.moveTo(game.toPixelPos(this.col - 1), game.toPixelPos(dotPosY - 1));
 				}
 				else if (this.type == "powerpill") {
-					context.arc(game.toPixelPos(this.col - 1) + pacman.radius, game.toPixelPos(dotPosY - 1) + pacman.radius, game.powerpillSizeCurrent, 0 * Math.PI, 2 * Math.PI);
+					context.arc(game.toPixelPos(this.col - 1) + CELL_PIXELS / 2, game.toPixelPos(dotPosY - 1) + CELL_PIXELS / 2, game.powerpillSize, 0 * Math.PI, 2 * Math.PI);
 					context.moveTo(game.toPixelPos(this.col - 1), game.toPixelPos(dotPosY - 1));
 				}
 			});
 		});
-		console.log("pps: " + game.nextPowerPillSize());
 		context.fill();
 
 		// Walls
@@ -1603,23 +1623,16 @@ function geronimo() {
 
 			// Pac Man
 			context.beginPath();
-
-			//testing using an image
-			var image = new Image();
-			image.src = "img/amplitude_logo.svg";
-			//context.drawImage(image, pacman.posX, pacman.posY, 2 * pacman.radius, 2 * pacman.radius);
-
-
 			context.fillStyle = "Yellow";
 			context.strokeStyle = "Yellow";
-			context.arc(pacman.posX + pacman.radius, pacman.posY + pacman.radius, pacman.radius, pacman.angle1 * Math.PI, pacman.angle2 * Math.PI);
-			context.lineTo(pacman.posX + pacman.radius, pacman.posY + pacman.radius);
+			context.arc(pacman.posX + CELL_PIXELS / 2, pacman.posY + CELL_PIXELS / 2, pacman.radius, pacman.angle1 * Math.PI, pacman.angle2 * Math.PI);
+			context.lineTo(pacman.posX + CELL_PIXELS / 2, pacman.posY + CELL_PIXELS / 2);
 			context.stroke();
 			context.fill();
 		}
-
 	}
 
+	// helper for debugging where things are in the grid
 	function renderGrid(gridPixelSize, color) {
 		context.save();
 		context.lineWidth = 0.5;
@@ -1647,8 +1660,7 @@ function geronimo() {
 	}
 
 	function animationLoop() {
-		canvas.width = canvas.width;
-		//renderGrid(pacman.radius, "red");
+		// renderGrid(CELL_PIXELS / 2, "red");
 		renderContent();
 
 		if (game.dieAnimation == 1) pacman.dieAnimation();
