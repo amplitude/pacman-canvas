@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 
 <!--<html lang="en">-->
-<html lang="en" manifest="cache.manifest">
+<html lang="en">
 
 <head>
 	<meta charset="utf-8" />
@@ -69,7 +69,7 @@
 			</noscript>
 
 			<!-- Highscore -->
-			<div class="content" id="highscore-content">
+			<!-- <div class="content" id="highscore-content">
 				<div class="button" id="back">&lt; back</div>
 				<div>
 					<h1>Leaderboard</h1>
@@ -79,10 +79,10 @@
 						</ol>
 					</p>
 				</div>
-			</div>
+			</div> -->
 
 			<!-- INSTRUCTIONS -->
-			<div class="content" id="instructions-content">
+			<!-- <div class="content" id="instructions-content">
 				<div class="button" id="back">&lt; back</div>
 				<div>
 					<h1>Instructions</h1>
@@ -142,7 +142,7 @@
 					</div>
 
 				</div>
-			</div>
+			</div> -->
 
 			<div class="content" id="poweredby-content">
 				<div>
@@ -167,28 +167,35 @@
 					<!-- canvas is splitted into 18x13 fields -->
 					<div id="canvas-container">
 						<div id="canvas-overlay-container">
+							<div id="canvas-overlay-splash-screen">
+								<img src="img/pacman-splash.png" id='splash-screen'>
+							</div>
 							<div id="canvas-overlay-content">
 								<div id="title"></div>
 								<div id="text"></div>
-								<img src="img/pacman-splash.png" id='splash-screen'>
 							</div>
 							<div id='email-form'>
-								<span id='form-validater'>Please enter your email<br/></span>
-								<input type='text' id='playerEmail' autofocus/>
-								<span class='button' id='email-submit'>save</span>
+								<div class='email-form-row'>
+									<div id='form-validater'></div>
+								</div>
+								<div class='email-form-row'>
+									<div>Email:</div>
+									<input type='text' id='playerEmail' autofocus/>
+								</div>
+								<div class='email-form-row'>
+									<div>Name:</div>
+									<input type='text' id='playerName'/>
+								</div>
+								<div class='button email-form-row' id='email-submit'>Start</div>
 							</div>
 						</div>
 						<canvas id="myCanvas" width="540" height="390">
 							<p>Canvas not supported</p>
 						</canvas>
 					</div>
+					<!-- OLD Buttons -->
+					<!-- <div class="controls" id="game-buttons">
 
-					<div class="controls" id="game-buttons">
-						<!-- Will be moved to Instructions 
-		<p class="nomobile">Use W-A-S-D keys to navigate Pac-Man</p>
-		-->
-
-						<!-- OLD Buttons -->
 						<div>
 							<span id="up" class="controlButton">&uarr;</span>
 						</div>
@@ -198,18 +205,18 @@
 							<span id="right" class="controlButton">&rarr;</span>
 						</div>
 
-					</div>
+					</div> -->
 					<!-- inGame Controls End -->
 
 					<!-- Game Menu -->
 					<div class="controls" id="menu-buttons">
 						<ul>
-							<li class="button" id="newGame">New Game</li>
-							<li class="button" id="highscore">Leaderboard</li>
-							<li class="button" id="instructions">Instructions</li>
+							<li class="button" id="newGame" hidden>New Game</li>
+							<!-- <li class="button" id="highscore">Leaderboard</li>
+							<li class="button" id="instructions">Instructions</li> -->
 							<li id="powered">
 								<span style="color:#FFFFFF;font-size:8pt">
-									
+
 									<img src="img/Amplitude_white_logo.png" height="24" style="padding-top:50px;"/>
 								</span>
 							</li>
