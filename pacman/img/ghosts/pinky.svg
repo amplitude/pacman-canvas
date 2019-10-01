@@ -1,25 +1,26 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<svg width="60px" height="60px" viewBox="0 0 60 60" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-    <!-- Generator: Sketch 45.1 (43504) - http://www.bohemiancoding.com/sketch -->
-    <title>pinky</title>
-    <desc>Created with Sketch.</desc>
-    <defs></defs>
-    <g id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
-        <g id="pinky">
-            <g id="Group-21">
-                <g id="Group-22" fill="#FF00FF">
-                    <path d="M30.1171576,0.726493519 C54.1171058,0.796776528 63.4562068,16.554612 58.1344606,48 L54.1289854,42.7559038 L50.3323206,47.4813124 L47.4339926,42.7559038 L44.4510657,47.4813124 L39.8888048,42.7559038 L36.7039625,48 L33.5905779,42.7559038 C31.8571352,45.2920922 30.6797066,47.0401243 30.0582921,48 C29.1261703,49.4398136 25.7971139,54.5500746 25.0905524,54.9266919 C11.5915074,62.1220641 3.94735223,59.8131669 2.15808679,48 C-3.20248079,16.414046 6.11720949,0.656210509 30.1171576,0.726493519 Z" id="Rectangle-21"></path>
-                    <polygon id="Rectangle-23" points="55.4091738 1.32618534 57.3816429 19.2840409 45 19.2840409"></polygon>
-                    <polygon id="Rectangle-23" points="3.79775416 0.726259456 14.0546192 18.9795136 1.67297627 25.5579554"></polygon>
-                </g>
-                <path d="M7,53 L33.9323117,48.3582258 L37.6937488,53.8639726 L41.4792046,49.5378668 L45.828876,53.8639726 L48.3114245,48.914284 L52.6470472,55.0853067 L56.6092453,52.2343187 L56.6092453,52.2343187 L56.6092453,52.2343187 C56.0913857,56.6490147 52.3245714,59.9606232 47.8799085,59.908747 L13.127987,59.5031372 L13.127987,59.5031372 C10.2659436,59.4697327 7.82599401,57.4193899 7.300141,54.6058713 L7,53 Z" id="Rectangle-22" fill="#FF00FF"></path>
-                <g id="Group-20" transform="translate(19.000000, 16.000000)">
-                    <circle id="Oval-22" fill="#FFFFFF" cx="9.26221701" cy="9.26221701" r="9.26221701"></circle>
-                    <circle id="Oval-22" fill="#0433FF" cx="9.27754294" cy="9.27754294" r="3.98854419"></circle>
-                    <circle id="Oval-22" fill="#FFFFFF" cx="28.262217" cy="9.26221701" r="9.26221701"></circle>
-                    <circle id="Oval-22" fill="#0433FF" cx="28.262217" cy="8.98854419" r="3.98854419"></circle>
-                </g>
-            </g>
-        </g>
-    </g>
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Generator: Adobe Illustrator 23.0.6, SVG Export Plug-In . SVG Version: 6.00 Build 0)  -->
+<svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
+	 viewBox="0 0 60 60" style="enable-background:new 0 0 60 60;" xml:space="preserve">
+<style type="text/css">
+	.st0{fill-rule:evenodd;clip-rule:evenodd;fill:#409FDE;}
+	.st1{fill-rule:evenodd;clip-rule:evenodd;fill:#FFFFFF;}
+	.st2{fill-rule:evenodd;clip-rule:evenodd;fill:#00175C;}
+</style>
+<title>pinky</title>
+<desc>Created with Sketch.</desc>
+<g>
+	<g>
+		<path class="st0" d="M30,0.3c24,0.1,33.3,15.8,28,47.3l-4-5.2l-3.8,4.7l-2.9-4.7l-3,4.7l-4.6-4.7l-3.1,5.2l-3.1-5.2
+			c-1.7,2.5-2.9,4.3-3.5,5.2c-0.9,1.4-4.3,6.6-5,6.9c-13.5,7.2-21.2,4.9-22.9-6.9C-3.3,16,6,0.4,30,0.3z"/>
+		<path class="st0" d="M55.3,0.9l2,18H44.9L55.3,0.9z"/>
+		<path class="st0" d="M3.7,0.3L14,18.6L1.6,25.2L3.7,0.3z"/>
+		<path class="st0" d="M6.9,52.7l26.9-4.6l3.8,5.5l3.8-4.3l4.3,4.3l2.5-4.9l4.3,6.2l4-2.9c-0.5,4.4-4.3,7.7-8.7,7.7L13,59.2
+			c-2.9,0-5.3-2.1-5.8-4.9L6.9,52.7z"/>
+	</g>
+	<circle class="st1" cx="28.2" cy="24.9" r="9.3"/>
+	<circle class="st2" cx="32.2" cy="24.9" r="4"/>
+	<circle class="st1" cx="47.2" cy="24.9" r="9.3"/>
+	<circle class="st2" cx="51.2" cy="24.6" r="4"/>
+</g>
 </svg>
