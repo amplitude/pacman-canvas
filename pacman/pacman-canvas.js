@@ -176,6 +176,7 @@ function geronimo() {
 	/* ----- Global Variables ---------------------------------------- */
 	var canvas;
 	var backgroundCanvas;
+	var backgroundImageLoaded = false;
 	var shouldRenderBackground = true;
 	var joystick;
 	var context;
@@ -1018,7 +1019,6 @@ function geronimo() {
 						tX = Math.abs(blinkyGridPosX + vX * 2);
 						tY = Math.abs(blinkyGridPosY + vY * 2);
 						break;
-// TODO
 					// target: pacman, until pacman is closer than 5 grid fields, then back to scatter
 					case "clyde":
 						var tX = pacmanGridPosX;
@@ -1207,10 +1207,10 @@ function geronimo() {
 		this.moveFigure = function() {
 			this.posX += this.speed * this.dirX;
 			this.posY += this.speed * this.dirY;
-			if (this.name === 'pacman') {
-				console.log('movingX: ' + this.posX + ' -> ' + (this.posX + this.speed * this.dirX));
-				console.log('movingY: ' + this.posY + ' -> ' + (this.posY + this.speed * this.dirY));
-			}
+			// if (this.name === 'pacman') {
+			// 	console.log('movingX: ' + this.posX + ' -> ' + (this.posX + this.speed * this.dirX));
+			// 	console.log('movingY: ' + this.posY + ' -> ' + (this.posY + this.speed * this.dirY));
+			// }
 
 			// Check if out of canvas
 			// get a radius that's a multiple of speed
@@ -1316,14 +1316,14 @@ function geronimo() {
 					) {
 						var s;
 						if (field === "powerpill") {
-							amplitude.getInstance().logEvent('Ate.PowerPill', { 'level': pacman.level });
+							amplitude.getInstance().logEvent('Ate.PowerPill', { 'level': game.level });
 							Sound.play("powerpill");
 							s = 50;
 							this.enableBeastMode();
 							game.startGhostFrightened();
 						}
 						else {
-							amplitude.getInstance().logEvent('Ate.Pill', { 'level': pacman.level });
+							amplitude.getInstance().logEvent('Ate.Pill', { 'level': game.level });
 							Sound.play("waka");
 							s = 10;
 							game.pillCount--;
@@ -1349,7 +1349,7 @@ function geronimo() {
 					this.stuckCount += 1;
 				} else {
 					if (this.stuckCount > 0) {
-						amplitude.getInstance().logEvent('Stopped.By.Wall', { 'level': pacman.level, 'frameCount': this.stuckCount });
+						amplitude.getInstance().logEvent('Stopped.By.Wall', { 'level': game.level, 'frameCount': this.stuckCount });
 						console.log('stuck on wall done ' + this.stuckCount)
 						this.stuckCount = 0;
 					}
@@ -1576,6 +1576,13 @@ function geronimo() {
 	}
 
 	$(document).ready(function () {
+		// MAKE SURE BACKGROUND IMAGE IS LOADED
+		$('#wallsImg').each(function(idx, img) {
+			$('<img>').on('load', imageLoaded).attr('src', $(img).attr('src'));
+		});
+		function imageLoaded() {
+			backgroundImageLoaded = true;
+		}
 
 		$.ajaxSetup({ mimeType: "application/json" });
 
@@ -1791,15 +1798,19 @@ function geronimo() {
 		if (shouldRenderBackground) {
 			if (useSmallMap) {
 				backgroundContext.drawImage(canvas_walls, 0, 0);
+				shouldRenderBackground = false;
+				console.log("rendered background")
 			} else {
 				// const wallsImage = new Image();
 				// wallsImage.src = 'img/walls.png';
-				backgroundContext.drawImage(document.getElementById('wallsImg'), 0, 0);
-				// backgroundContext.drawImage(wallsImage, 0, 0);
-				// renderGrid(backgroundContext, backgroundCanvas, CELL_PIXELS / 2, "red");
+
+				if (backgroundImageLoaded) {
+					backgroundContext.drawImage(document.getElementById('wallsImg'), 0, 0);
+
+					console.log("rendered background")
+					shouldRenderBackground = false;
+				}
 			};
-			console.log("rendered background")
-			shouldRenderBackground = false;
 		}
 
 
