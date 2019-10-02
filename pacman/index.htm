@@ -168,7 +168,8 @@
 					<div id="canvas-container">
 						<div id="canvas-overlay-container">
 							<div id="canvas-overlay-splash-screen">
-								<img src="img/pacman-splash.png" id='splash-screen'>
+								<img src="img/pacman-splash-big.png" id='splash-screen'>
+								<!-- <img src="img/pacman-splash.png" id='splash-screen'> -->
 							</div>
 							<div id="canvas-overlay-content">
 								<div id="title"></div>
@@ -189,9 +190,20 @@
 								<div class='button email-form-row' id='email-submit'>Start</div>
 							</div>
 						</div>
-						<canvas id="myCanvas" width="540" height="390">
+						<canvas id="myCanvas" width="1260" height="1395">
 							<p>Canvas not supported</p>
 						</canvas>
+						<canvas id="myBackground" width="1260" height="1395">
+						</canvas>
+						<div style="display:none;">
+							<img id="wallsImg"
+									src="img/walls.png"/>
+							</div>
+						<!-- <canvas id="myCanvas" width="540" height="390">
+							<p>Canvas not supported</p>
+						</canvas>
+						<canvas id="myBackground" width="540" height="390">
+						</canvas>-->
 					</div>
 					<!-- OLD Buttons -->
 					<!-- <div class="controls" id="game-buttons">
