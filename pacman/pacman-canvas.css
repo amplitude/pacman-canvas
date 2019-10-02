@@ -12,7 +12,8 @@
 /* ---------------- */
 
 body {
-  background-color: #000;
+  background-color: #001325;
+  /* background-color: #000; */
   color: white;
   font-family: "Press Start 2P", cursive;
 }
@@ -56,7 +57,8 @@ div {
   padding: 8px;
 }
 #menu-buttons .button {
-  background: rgba(0, 0, 0, 0.4);
+  background-color: rgba(0, 19, 37, 0.4);
+  /* background: rgba(0, 0, 0, 0.4); */
 }
 #menu-buttons .button:hover,
 .button:hover {
@@ -73,7 +75,8 @@ div {
 
 #email-form {
   /* Hard coded to be under splash */
-  margin-top: 280px;
+  margin-top: 1100px;
+  /* margin-top: 280px; */
   width: 100%;
   position: absolute;
   display: flex;
@@ -108,23 +111,34 @@ textarea:focus {
 #score {
   float: right;
 }
-
-#myCanvas {
-  border: none;
-  display: block;
-  background: rgb(0, 0, 0);
-  width: 100%;
-  height: auto;
-}
 #canvas-container {
   position: relative;
+  height: 1395px;
+  /* height: 390px; */
+}
+#myCanvas {
+  position: absolute;
+  border: none;
+  display: block;
+  width: 100%;
+  height: auto;
+  z-index: 2;
+}
+#myBackground {
+  position: absolute;
+  border: none;
+  width: 100%;
+  height: auto;
+  z-index: 1;
 }
 #canvas-overlay-container {
   position: absolute;
-  background: rgba(0, 0, 0, 0.7);
+  background: rgba(0, 19, 37, 0.7);
   height: 100%;
-  width: 540px;
+  width: 1260px;
+  /* width: 540px; */
   max-width: 100%;
+  z-index: 3;
 }
 #canvas-overlay-splash-screen {
   position: absolute;
@@ -132,7 +146,8 @@ textarea:focus {
   left: 0;
   margin-top: 0;
   max-width: 100%;
-  width: 540px;
+  width: 1260px;
+  /* width: 540px; */
   max-width: 100%;
 }
 #canvas-overlay-content {
@@ -142,11 +157,13 @@ textarea:focus {
   margin-top: 0;
   max-width: 100%;
   text-align: center;
-  width: 540px;
+  width: 1260px;
+  /* width: 540px; */
   max-width: 100%;
 }
 #canvas-overlay-content #title {
-  margin-top: 120px;
+  margin-top: 300px;
+  /* margin-top: 120px; */
   text-transform: uppercase;
   font-size: 150%;
   display: none;
@@ -158,14 +175,16 @@ textarea:focus {
 }
 .main {
   width: 100%;
-  max-width: 660px;
+  max-width: 1360px;
+  /* max-width: 660px; */
   margin: 10px auto;
   position: static;
   left: auto;
 }
 .content {
   width: 100%;
-  max-width: 540px;
+  max-width: 1260px;
+  /* max-width: 540px; */
   text-align: left;
   margin: 0;
 }
@@ -178,7 +197,8 @@ textarea:focus {
   padding: 0;
 }
 .game {
-  max-width: 540px;
+  width: 1260px;
+  /* width: 540px; */
   margin: auto;
 }
 

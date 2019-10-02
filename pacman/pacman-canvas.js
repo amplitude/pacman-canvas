@@ -13,14 +13,69 @@
 "use strict";
 
 // CONSTANTS + LOGIC FOR RENDERING
-const CELL_PIXELS = 30; // number of pixels in a cell - should be a multiple of 2
+let CELL_PIXELS = 30; // number of pixels in a cell - should be a multiple of 2
+let MOVE_SPEED_IN_PIXELS = 5; // should divide CELL_PIXELS evenly
+let DAZZLE_SPEED_IN_PIXELS = 2;
+let PILL_FONT_SIZE = 13;
+let POWER_PILL_SIZE = 8;
+
+// fixed map size (for now) - should match up with map.json file being loaded
+const useSmallMap = false;
+const SMALL_MAP_CONFIG = "data/map.json";
+const LARGE_MAP_DOT_CONFIG = "data/dot-map.txt";
+
+let GRID_MAX_X, GRID_MAX_Y, GHOST_CONFS, GHOST_HOUSE_DIR_OVERRIDES, PAC_CONF;
+if (useSmallMap) {
+	GRID_MAX_X = 18;
+	GRID_MAX_Y = 13;
+	GHOST_CONFS = {
+		'pinky': { 'gridStartX': 7, 'gridStartY': 5, 'gridBaseX': 2, 'gridBaseY': 2, 'imgLoc': 'img/ghosts/pinky.svg' },
+		'inky': { 'gridStartX': 8, 'gridStartY': 5, 'gridBaseX': 13, 'gridBaseY': 11, 'imgLoc': 'img/ghosts/Inky.svg' },
+		'blinky': { 'gridStartX': 9, 'gridStartY': 5, 'gridBaseX': 13, 'gridBaseY': 0, 'imgLoc': 'img/ghosts/blinky.svg' },
+		'clyde': { 'gridStartX': 10, 'gridStartY': 5, 'gridBaseX': 2, 'gridBaseY': 11, 'imgLoc': 'img/ghosts/clyde.svg' },
+	};
+	GHOST_HOUSE_DIR_OVERRIDES = { '7,5': 'right', '8,5': 'up', '9,5': 'up', '10,5': 'left', '8,4': 'exit', '9,4': 'exit' };
+	PAC_CONF = { 'radius': 15, 'gridStartX': '0', 'gridStartY': '6', 'color': 'Yellow'};
+} else {
+	GRID_MAX_X = 28;
+	GRID_MAX_Y = 31;
+	GHOST_CONFS = {
+		'pinky': { 'gridStartX': 12, 'gridStartY': 14, 'gridBaseX': 1, 'gridBaseY': 1, 'imgLoc': 'img/ghosts/pinky.svg' },
+		'inky': { 'gridStartX': 13, 'gridStartY': 14, 'gridBaseX': 23, 'gridBaseY': 29, 'imgLoc': 'img/ghosts/Inky.svg' },
+		'blinky': { 'gridStartX': 14, 'gridStartY': 14, 'gridBaseX': 26, 'gridBaseY': 1, 'imgLoc': 'img/ghosts/blinky.svg' },
+		'clyde': { 'gridStartX': 15, 'gridStartY': 14, 'gridBaseX': 4, 'gridBaseY': 29, 'imgLoc': 'img/ghosts/clyde.svg' },
+	};
+	GHOST_HOUSE_DIR_OVERRIDES = { '12,14': 'right', '13,14': 'up', '14,14': 'up', '15,14': 'left', '13,13': 'up', '14,13': 'up',  '13,12': 'exit', '14,12': 'exit' };
+	PAC_CONF = { 'radius': 25, 'gridStartX': '0', 'gridStartY': '14', 'color': '#ffaf86'};
+
+	CELL_PIXELS = 45;
+	MOVE_SPEED_IN_PIXELS = 9;
+	DAZZLE_SPEED_IN_PIXELS = 3;
+	PILL_FONT_SIZE = 20;
+	POWER_PILL_SIZE = 15;
+}
+
+// helper for grid position getting - handles 1 out of bound
+const getGridPosX = posX => {
+	if (posX < 0) {
+		posX = posX + (GRID_MAX_X * CELL_PIXELS);
+	} else if (posX > GRID_MAX_X * CELL_PIXELS) {
+		posX = posX - (GRID_MAX_X * CELL_PIXELS);
+	}
+	return (posX - (posX % CELL_PIXELS)) / CELL_PIXELS;
+}
+const getGridPosY = posY => {
+	if (posY < 0) {
+		posY = posY + (GRID_MAX_Y * CELL_PIXELS);
+	} else if (posY > GRID_MAX_Y * CELL_PIXELS) {
+		posY = posY - (GRID_MAX_Y * CELL_PIXELS);
+	}
+	return (posY - (posY % CELL_PIXELS)) / CELL_PIXELS;
+}
+// constants for small map
 const WALL_PADDING = 8; // padding given to a wall
 const DOOR_Y_OFFSET = 12; // top padding of door line from top of grid cells
 const DOOR_THICKNESS = 1;
-
-// fixed map size (for now) - should match up with map.json file being loaded
-const GRID_MAX_X = 18;
-const GRID_MAX_Y = 13;
 
 // helper for building a wall, 0,0 is the top left corner
 const buildWall = function buildWall(context, gridX, gridY, width, height) {
@@ -32,15 +87,7 @@ const buildWall = function buildWall(context, gridX, gridY, width, height) {
 	context.fillRect(startX, startY, pixelWidth, pixelHeight);
 };
 
-// helpers for converting from grids to pixels
-const toGridPos = function (pixelPos) {
-	return ((pixelPos - (pixelPos % CELL_PIXELS)) / CELL_PIXELS);
-};
-
 // GAMEPLAY LOGIC AND CONSTANTS
-const MAP_CONFIG = "data/map.json";
-const MOVE_SPEED_IN_PIXELS = 5; // should divide CELL_PIXELS evenly
-
 const getFramesPerSecond = level => {
 	switch (level) {
 		case 1:
@@ -55,7 +102,11 @@ const getFramesPerSecond = level => {
 const getGhostSpeed = function getGhostSpeed(level) {
 	switch (level) {
 		case 1:
-			return 3;
+			if (useSmallMap) {
+				return 3.75;
+			} else {
+				return 7.5;
+			}
 		default:
 			return MOVE_SPEED_IN_PIXELS;
 	}
@@ -82,9 +133,9 @@ const getLevelTitle = function (level) {
 			return '"A Little Faster"';
 		// activate chase / scatter switching
 		case 3:
-			return '"Inky\s awakening"';
+			return '"The Last Level"';
 		default:
-			return '"nothing new"';
+			return '';
 	}
 }
 
@@ -124,8 +175,11 @@ function geronimo() {
 
 	/* ----- Global Variables ---------------------------------------- */
 	var canvas;
+	var backgroundCanvas;
+	var shouldRenderBackground = true;
 	var joystick;
 	var context;
+	var backgroundContext;
 	var game;
 	var canvas_walls, context_walls;
 	var inky, blinky, clyde, pinky;
@@ -262,13 +316,14 @@ function geronimo() {
 		this.height = CELL_PIXELS * GRID_MAX_Y;
 
 		this.pillSize = 3;
-		this.powerpillSize = 8;
+		this.powerpillSize = POWER_PILL_SIZE;
 
 		this.ghostFrightened = false;
 		this.ghostFrightenedTimer = 240;
+		this.ghostKillCount = 0;
 		this.ghostMode = 0;			// 0 = Scatter, 1 = Chase
 		this.ghostSpeedNormal = getGhostSpeed(this.level);
-		this.ghostSpeedDazzled = 2; // global default for ghost speed when dazzled
+		this.ghostSpeedDazzled = DAZZLE_SPEED_IN_PIXELS; // global default for ghost speed when dazzled
 
 		/* Game Functions */
 		this.startGhostFrightened = function () {
@@ -283,6 +338,7 @@ function geronimo() {
 
 		this.endGhostFrightened = function () {
 			console.log("ghost frigthened end");
+			this.ghostKillCount = 0;
 			this.ghostFrightened = false;
 			inky.undazzle();
 			pinky.undazzle();
@@ -322,24 +378,24 @@ function geronimo() {
 			}
 
 			// check frame count to see whether we are chasing or scattering
-			// 5 seconds scatter -> 20 seconds chase
-			// 5 seconds scatter -> 20 seconds chase
-			// 5 seconds scatter -> 20 seconds chase
+			// 7 seconds scatter -> 20 seconds chase
+			// 7 seconds scatter -> 20 seconds chase
+			// 7 seconds scatter -> 20 seconds chase
 			// instant scatter -> chase
 			// estimate 30 frames per second
-			if (this.frameCount > 75 * 30) {
+			if (this.frameCount > 81 * 30) {
 				maybeChase();
-			} else if (this.frameCount === 75 * 30) {
+			} else if (this.frameCount === 81 * 30) {
 				maybeScatter();
-			} else if (this.frameCount > 55 * 30) {
+			} else if (this.frameCount > 61 * 30) {
 				maybeChase();
-			} else if (this.frameCount > 50 * 30) {
+			} else if (this.frameCount > 54 * 30) {
 				maybeScatter();
-			} else if (this.frameCount > 30 * 30) {
+			} else if (this.frameCount > 34 * 30) {
 				maybeChase();
-			} else if (this.frameCount > 25 * 30) {
+			} else if (this.frameCount > 27 * 30) {
 				maybeScatter();
-			} else if (this.frameCount > 5 * 30) {
+			} else if (this.frameCount > 7 * 30) {
 				maybeChase();
 			}
 		};
@@ -376,13 +432,24 @@ function geronimo() {
 
 		this.nextLevel = function () {
 			this.level++;
-			// update things for new level
-			this.ghostSpeedNormal = getGhostSpeed(this.level);
-			console.log("Level " + game.level);
-			amplitude.getInstance().logEvent('Next.Level');
-			game.showMessage("Level " + game.level, getLevelTitle(game.level) + "<br/>(Click to continue!)");
-			game.refreshLevel(".level");
-			this.init(1);
+			// for amplify, stop after level 3
+			if (this.level === 4) {
+				// reset stuff
+				this.init(1);
+				game.showMessage("You did it!", "Final Score: " + game.score.score + "<br/>(Click to Restart!)");
+				game.gameOver = true;
+				amplitude.getInstance().logEvent('Game.Over', { 'score': game.score.score, 'level': game.level, 'lives': pacman.lives });
+				addHighscore();
+				// $('#playerEmail').focus();]\
+			} else {
+				// update things for new level
+				this.ghostSpeedNormal = getGhostSpeed(this.level);
+				console.log("Level " + game.level);
+				amplitude.getInstance().logEvent('Next.Level', { 'newLevel': game.level, 'lives': pacman.lives });
+				game.showMessage("Level " + game.level, getLevelTitle(game.level) + "<br/>(Click to continue!)");
+				game.refreshLevel(".level");
+				this.init(1);
+			}
 		};
 
 		this.drawHearts = function (count) {
@@ -413,11 +480,15 @@ function geronimo() {
 
 		this.closeMessage = function () {
 			$('#canvas-overlay-container').fadeOut(200);
-			$('#canvas-overlay-content #title').text('');
-			$('#canvas-overlay-content #text').html('');
+			this.clearMessage();
 			// NO CONTROLS
 			// $('.controls').slideToggle(200);
 		};
+
+		this.clearMessage = function() {
+			$('#canvas-overlay-content #title').text('');
+			$('#canvas-overlay-content #text').html('');
+		}
 
 		this.pauseResume = function () {
 			if (!this.running) {
@@ -437,7 +508,7 @@ function geronimo() {
 					animationLoop();
 				}
 			} else if (this.gameOver) {
-				this.closeMessage();
+				this.clearMessage();
 				startNewGame();
 			} else if (this.pause) {
 				// stop timer
@@ -460,18 +531,62 @@ function geronimo() {
 				this.timer.reset();
 			}
 
-			// get Level Map
-			$.ajax({
-				url: MAP_CONFIG,
-				async: false,
-				beforeSend: function (xhr) {
-					if (xhr.overrideMimeType) xhr.overrideMimeType("application/json");
-				},
-				dataType: "json",
-				success: data => {
-					this.map = data;
-				}
-			});
+			// get Small Level Map
+			if (useSmallMap) {
+				$.ajax({
+					url: SMALL_MAP_CONFIG,
+					async: false,
+					beforeSend: function (xhr) {
+						if (xhr.overrideMimeType) xhr.overrideMimeType("application/json");
+					},
+					dataType: "json",
+					success: data => {
+						this.map = data;
+					}
+				});
+			} else {
+				// parse dot map
+				$.ajax({
+					url: LARGE_MAP_DOT_CONFIG,
+					async: false,
+					beforeSend: function (xhr) {
+						if (xhr.overrideMimeType) xhr.overrideMimeType("text/plain");
+					},
+					dataType: "text",
+					success: data => {
+						// convert into the weird format that's used
+						const posY = data.split('\n').map((line, idx) => {
+							return {
+								'row': idx + 1,
+								'posX': line.split('').map((c, idx) => {
+									let type;
+									switch (c) {
+										case 'x':
+											type = 'wall';
+											break;
+										case '.':
+											type = 'pill';
+											break;
+										case 'o':
+											type = 'powerpill'
+											break;
+										case 'd':
+											type = 'door'
+											break;
+										default:
+											type = 'null';
+									}
+									return {
+										'col': idx + 1,
+										'type': type,
+									};
+								}),
+							};
+						});
+						this.map = { 'posY': posY  };
+					}
+				});
+			}
 
 			let pillCount = 0;
 			this.map.posY.forEach(rowObj => {
@@ -497,6 +612,7 @@ function geronimo() {
 			game.drawHearts(pacman.lives);
 
 			this.frameCount = 0;
+			this.ghostKillCount = 0;
 			this.ghostFrightened = false;
 			this.ghostFrightenedTimer = 240;
 			this.ghostMode = 0;			// 0 = Scatter, 1 = Chase
@@ -505,12 +621,11 @@ function geronimo() {
 
 			// initalize Ghosts, avoid memory flooding
 			if (pinky === null || pinky === undefined) {
-				pinky = new Ghost("pinky", 7, 5, 'img/ghosts/pinky.svg', 2, 2);
-				inky = new Ghost("inky", 8, 5, 'img/ghosts/Inky.svg', 13, 11);
-				blinky = new Ghost("blinky", 9, 5, 'img/ghosts/blinky.svg', 13, 0);
-				clyde = new Ghost("clyde", 10, 5, 'img/ghosts/clyde.svg', 2, 11);
-			}
-			else {
+				pinky = new Ghost("pinky", GHOST_CONFS.pinky);
+				inky = new Ghost("inky", GHOST_CONFS.inky);
+				blinky = new Ghost("blinky", GHOST_CONFS.blinky);
+				clyde = new Ghost("clyde", GHOST_CONFS.clyde);
+			} else {
 				//console.log("ghosts reset");
 				pinky.reset();
 				inky.reset();
@@ -538,79 +653,81 @@ function geronimo() {
 
 		/* ------------ Start Pre-Build Walls  ------------ */
 		this.buildWalls = function () {
-			if (this.ghostMode === 0) game.wallColor = "#00A7CF";
-			else game.wallColor = "Red";
-			// TODO(kevin) - figure out where this is actually being created and how its tied to the game's canvas
-			canvas_walls = document.createElement('canvas');
-			canvas_walls.width = game.canvas.width;
-			canvas_walls.height = game.canvas.height;
-			context_walls = canvas_walls.getContext("2d");
+			if (useSmallMap) {
+				// should rerender background probably
+				shouldRenderBackground = true;
+				if (this.ghostMode === 0) game.wallColor = "#00A7CF";
+				else game.wallColor = "Red";
+				canvas_walls = document.createElement('canvas');
+				canvas_walls.width = game.canvas.width;
+				canvas_walls.height = game.canvas.height;
+				context_walls = canvas_walls.getContext("2d");
 
-			context_walls.fillStyle = game.wallColor;
-			context_walls.strokeStyle = game.wallColor;
+				context_walls.fillStyle = game.wallColor;
+				context_walls.strokeStyle = game.wallColor;
 
-			//horizontal outer
-			buildWall(context_walls, 0, 0, 18, 1);
-			buildWall(context_walls, 0, 12, 18, 1);
+				//horizontal outer
+				buildWall(context_walls, 0, 0, 18, 1);
+				buildWall(context_walls, 0, 12, 18, 1);
 
-			// vertical outer
-			buildWall(context_walls, 0, 0, 1, 6);
-			buildWall(context_walls, 0, 7, 1, 6);
-			buildWall(context_walls, 17, 0, 1, 6);
-			buildWall(context_walls, 17, 7, 1, 6);
+				// vertical outer
+				buildWall(context_walls, 0, 0, 1, 6);
+				buildWall(context_walls, 0, 7, 1, 6);
+				buildWall(context_walls, 17, 0, 1, 6);
+				buildWall(context_walls, 17, 7, 1, 6);
 
-			// ghost base
-			buildWall(context_walls, 7, 4, 1, 1);
-			buildWall(context_walls, 6, 5, 1, 2);
-			buildWall(context_walls, 10, 4, 1, 1);
-			buildWall(context_walls, 11, 5, 1, 2);
-			buildWall(context_walls, 6, 6, 6, 1);
+				// ghost base
+				buildWall(context_walls, 7, 4, 1, 1);
+				buildWall(context_walls, 6, 5, 1, 2);
+				buildWall(context_walls, 10, 4, 1, 1);
+				buildWall(context_walls, 11, 5, 1, 2);
+				buildWall(context_walls, 6, 6, 6, 1);
 
-			// ghost base door - no left-right padding, place at wall padding (thickness 1)
-			context_walls.fillRect(8 * CELL_PIXELS, 4 * CELL_PIXELS + DOOR_Y_OFFSET, 2 * CELL_PIXELS, DOOR_THICKNESS);
+				// ghost base door - no left-right padding, place at wall padding (thickness 1)
+				context_walls.fillRect(8 * CELL_PIXELS, 4 * CELL_PIXELS + DOOR_Y_OFFSET, 2 * CELL_PIXELS, DOOR_THICKNESS);
 
-			// single blocks
-			buildWall(context_walls, 4, 0, 1, 2);
-			buildWall(context_walls, 13, 0, 1, 2);
+				// single blocks
+				buildWall(context_walls, 4, 0, 1, 2);
+				buildWall(context_walls, 13, 0, 1, 2);
 
-			buildWall(context_walls, 2, 2, 1, 2);
-			buildWall(context_walls, 6, 2, 2, 1);
-			buildWall(context_walls, 15, 2, 1, 2);
-			buildWall(context_walls, 10, 2, 2, 1);
+				buildWall(context_walls, 2, 2, 1, 2);
+				buildWall(context_walls, 6, 2, 2, 1);
+				buildWall(context_walls, 15, 2, 1, 2);
+				buildWall(context_walls, 10, 2, 2, 1);
 
-			buildWall(context_walls, 2, 3, 2, 1);
-			buildWall(context_walls, 14, 3, 2, 1);
-			buildWall(context_walls, 5, 3, 1, 1);
-			buildWall(context_walls, 12, 3, 1, 1);
-			buildWall(context_walls, 3, 3, 1, 3);
-			buildWall(context_walls, 14, 3, 1, 3);
+				buildWall(context_walls, 2, 3, 2, 1);
+				buildWall(context_walls, 14, 3, 2, 1);
+				buildWall(context_walls, 5, 3, 1, 1);
+				buildWall(context_walls, 12, 3, 1, 1);
+				buildWall(context_walls, 3, 3, 1, 3);
+				buildWall(context_walls, 14, 3, 1, 3);
 
-			buildWall(context_walls, 3, 4, 1, 1);
-			buildWall(context_walls, 14, 4, 1, 1);
+				buildWall(context_walls, 3, 4, 1, 1);
+				buildWall(context_walls, 14, 4, 1, 1);
 
-			buildWall(context_walls, 0, 5, 2, 1);
-			buildWall(context_walls, 3, 5, 2, 1);
-			buildWall(context_walls, 16, 5, 2, 1);
-			buildWall(context_walls, 13, 5, 2, 1);
+				buildWall(context_walls, 0, 5, 2, 1);
+				buildWall(context_walls, 3, 5, 2, 1);
+				buildWall(context_walls, 16, 5, 2, 1);
+				buildWall(context_walls, 13, 5, 2, 1);
 
-			buildWall(context_walls, 0, 7, 2, 2);
-			buildWall(context_walls, 16, 7, 2, 2);
-			buildWall(context_walls, 3, 7, 2, 2);
-			buildWall(context_walls, 13, 7, 2, 2);
+				buildWall(context_walls, 0, 7, 2, 2);
+				buildWall(context_walls, 16, 7, 2, 2);
+				buildWall(context_walls, 3, 7, 2, 2);
+				buildWall(context_walls, 13, 7, 2, 2);
 
-			buildWall(context_walls, 4, 8, 2, 2);
-			buildWall(context_walls, 12, 8, 2, 2);
-			buildWall(context_walls, 5, 8, 3, 1);
-			buildWall(context_walls, 10, 8, 3, 1);
+				buildWall(context_walls, 4, 8, 2, 2);
+				buildWall(context_walls, 12, 8, 2, 2);
+				buildWall(context_walls, 5, 8, 3, 1);
+				buildWall(context_walls, 10, 8, 3, 1);
 
-			buildWall(context_walls, 2, 10, 1, 1);
-			buildWall(context_walls, 15, 10, 1, 1);
-			buildWall(context_walls, 7, 10, 4, 1);
-			buildWall(context_walls, 4, 11, 2, 2);
-			buildWall(context_walls, 12, 11, 2, 2);
-			/* ------------ End Pre-Build Walls  ------------ */
+				buildWall(context_walls, 2, 10, 1, 1);
+				buildWall(context_walls, 15, 10, 1, 1);
+				buildWall(context_walls, 7, 10, 4, 1);
+				buildWall(context_walls, 4, 11, 2, 2);
+				buildWall(context_walls, 12, 11, 2, 2);
+				/* ------------ End Pre-Build Walls  ------------ */
+			}
 		};
-
 	}
 
 	game = new Game();
@@ -679,7 +796,13 @@ function geronimo() {
 	}
 
 	// Ghost object in Constructor notation
-	function Ghost(name, gridStartX, gridStartY, image, gridBaseX, gridBaseY) {
+	function Ghost(name, ghostConf) {
+		const gridStartX = ghostConf.gridStartX;
+		const gridStartY = ghostConf.gridStartY;
+		const gridBaseX = ghostConf.gridBaseX;
+		const gridBaseY = ghostConf.gridBaseY;
+		const image = ghostConf.imgLoc;
+
 		this.name = name;
 		this.posX = gridStartX * CELL_PIXELS;
 		this.posY = gridStartY * CELL_PIXELS;
@@ -776,8 +899,8 @@ function geronimo() {
 
 		this.die = function () {
 			if (!this.dead) {
-				amplitude.getInstance().logEvent('Killed.Ghost', { 'name': name });
-				game.score.add(100);
+				amplitude.getInstance().logEvent('Killed.Ghost', { 'name': name, 'lives': pacman.lives });
+				game.score.add(100 * Math.pow(2, game.ghostKillCount));
 				//this.reset();
 				this.dead = true;
 				this.changeSpeed(game.ghostSpeedNormal);
@@ -802,17 +925,24 @@ function geronimo() {
 			this.checkCollision();
 
 			// If in the Ghost House, override any direction movement to "exit"
-			if (this.ghostHouse == true) {
-				if ((this.getGridPosY() == 5) && this.isAlignedToGrid(this.posX, this.posY)) {
-					if ((this.getGridPosX() == 7)) this.setDirection(right);
-					if ((this.getGridPosX() == 8) || this.getGridPosX() == 9) this.setDirection(up);
-					if ((this.getGridPosX() == 10)) this.setDirection(left);
+			if (this.ghostHouse == true && this.isAlignedToGrid(this.posX, this.posY)) {
+				const posKey = `${getGridPosX(this.posX)},${getGridPosY(this.posY)}`;
+				const override = GHOST_HOUSE_DIR_OVERRIDES[posKey];
+				switch (override) {
+					case 'up':
+						this.setDirection(up);
+						break;
+					case 'right':
+						this.setDirection(right);
+						break;
+					case 'left':
+						this.setDirection(left);
+						break;
+					case 'exit':
+						this.ghostHouse = false;
+						break;
 				}
-				// left ghost house ghost house
-				if ((this.getGridPosY() == 4) && ((this.getGridPosX() == 8) || (this.getGridPosX() == 9)) && this.isAlignedToGrid(this.posX, this.posY)) {
-					console.log("ghosthouse -> false");
-					this.ghostHouse = false;
-				}
+				console.log(this.name + " " + posKey + " " + override);
 			}
 
 			this.moveFigure();
@@ -821,7 +951,7 @@ function geronimo() {
 		this.checkCollision = function () {
 
 			/* Check Back to Home */
-			if (this.dead && this.getGridPosX() == this.gridStartX && this.getGridPosY() == this.gridStartY) this.reset();
+			if (this.dead && getGridPosX(this.posX) == this.gridStartX && getGridPosY(this.posY) == this.gridStartY) this.reset();
 			else {
 
 				/* Check Ghost / Pacman Collision			*/
@@ -840,10 +970,8 @@ function geronimo() {
 		/* Pathfinding - find the best direction to set */
 		this.getNextDirection = function () {
 			// get next field
-			var pX = this.getGridPosX();
-			var pY = this.getGridPosY();
-
-			game.getMapContent(pX, pY);
+			var pX = getGridPosX(this.posX);
+			var pY = getGridPosY(this.posY);
 
 			// TODO - if dazzled, pick a random direction
 
@@ -855,6 +983,8 @@ function geronimo() {
 				var tX = this.gridBaseX;
 				var tY = this.gridBaseY;
 			} else if (game.ghostMode == 1) {			// Chase Mode
+				const pacmanGridPosX = getGridPosX(pacman.posX);
+				const pacmanGridPosY = getGridPosY(pacman.posY);
 				switch (this.name) {
 					// target: 4 ahead of pacman or 4 ahead and 4 left of pacman if pacman is facing up
 					case "pinky":
@@ -867,33 +997,35 @@ function geronimo() {
 						}
 
 						// TODO(kevin) - game.width / pacman.radius seems wrong - width of map in cells should be game.width / (2 * pacman.radius)
-						var tX = (pacman.getGridPosX() + pdirX * 4) % (game.width / pacman.radius + 1);
-						var tY = (pacman.getGridPosY() + pdirY * 4) % (game.height / pacman.radius + 1);
+						var tX = (pacmanGridPosX + pdirX * 4) % (game.width / pacman.radius + 1);
+						var tY = (pacmanGridPosY + pdirY * 4) % (game.height / pacman.radius + 1);
 						break;
 
 					// target: pacman
 					case "blinky":
-						var tX = pacman.getGridPosX();
-						var tY = pacman.getGridPosY();
+						var tX = pacmanGridPosX;
+						var tY = pacmanGridPosY;
 						break;
 
 					// target:
 					case "inky":
-						var tX = pacman.getGridPosX() + 2 * pacman.direction.dirX;
-						var tY = pacman.getGridPosY() + 2 * pacman.direction.dirY;
-						var vX = tX - blinky.getGridPosX();
-						var vY = tY - blinky.getGridPosY();
-						tX = Math.abs(blinky.getGridPosX() + vX * 2);
-						tY = Math.abs(blinky.getGridPosY() + vY * 2);
+						const blinkyGridPosX = getGridPosX(blinky.posX);
+						const blinkyGridPosY = getGridPosY(blinky.posY);
+						var tX = pacmanGridPosX + 2 * pacman.direction.dirX;
+						var tY = pacmanGridPosY + 2 * pacman.direction.dirY;
+						var vX = tX - blinkyGridPosX;
+						var vY = tY - blinkyGridPosY;
+						tX = Math.abs(blinkyGridPosX + vX * 2);
+						tY = Math.abs(blinkyGridPosY + vY * 2);
 						break;
 // TODO
 					// target: pacman, until pacman is closer than 5 grid fields, then back to scatter
 					case "clyde":
-						var tX = pacman.getGridPosX();
-						var tY = pacman.getGridPosY();
+						var tX = pacmanGridPosX;
+						var tY = pacmanGridPosY;
 						var dist = Math.sqrt(Math.pow((pX - tX), 2) + Math.pow((pY - tY), 2));
 
-						if (dist < 5 && game.level != 6 && game.level < 8) {
+						if (dist < 5) {
 							tX = this.gridBaseX;
 							tY = this.gridBaseY;
 						}
@@ -902,7 +1034,7 @@ function geronimo() {
 				}
 			}
 
-			console.log('use bfs');
+			// console.log('use bfs');
 			var map = [];
 			var mapWidth = game.map.posY[0].posX.length;
 			var mapHeight = game.map.posY.length;
@@ -913,8 +1045,8 @@ function geronimo() {
 				}
 			}
 			var currLoc = {
-				"x": this.getGridPosX(),
-				"y": this.getGridPosY()
+				"x": getGridPosX(this.posX),
+				"y": getGridPosY(this.posY)
 			};
 			var neighbors = new Set([currLoc]);
 			var currDist = 0;
@@ -993,7 +1125,7 @@ function geronimo() {
 				currDist++;
 			}
 
-			console.log("Didn't BFS!");
+			// console.log("Didn't BFS!");
 
 			var oppDir = this.getOppositeDirection();	// ghosts are not allowed to change direction 180�
 
@@ -1075,19 +1207,22 @@ function geronimo() {
 		this.moveFigure = function() {
 			this.posX += this.speed * this.dirX;
 			this.posY += this.speed * this.dirY;
+			if (this.name === 'pacman') {
+				console.log('movingX: ' + this.posX + ' -> ' + (this.posX + this.speed * this.dirX));
+				console.log('movingY: ' + this.posY + ' -> ' + (this.posY + this.speed * this.dirY));
+			}
 
 			// Check if out of canvas
-			if (this.posX >= game.width - this.radius) this.posX = this.speed - this.radius;
-			if (this.posX <= 0 - this.radius) this.posX = game.width - this.speed - this.radius;
-			if (this.posY >= game.height - this.radius) this.posY = this.speed - this.radius;
-			if (this.posY <= 0 - this.radius) this.posY = game.height - this.speed - this.radius;
-		}
-
-		this.getGridPosX = function() {
-			return (this.posX - (this.posX % CELL_PIXELS)) / CELL_PIXELS;
-		}
-		this.getGridPosY = function() {
-			return (this.posY - (this.posY % CELL_PIXELS)) / CELL_PIXELS;
+			// get a radius that's a multiple of speed
+			let radiusOffset = 0;
+			while (radiusOffset < this.radius) {
+				radiusOffset += this.speed;
+			}
+			// going through the right
+			if (this.posX > game.width + this.radius) this.posX = this.speed - radiusOffset;
+			if (this.posX <= 0 - this.radius) this.posX = game.width - this.speed + radiusOffset;
+			if (this.posY > game.height + this.radius) this.posY = this.speed - radiusOffset;
+			if (this.posY <= 0 - this.radius) this.posY = game.height - this.speed + radiusOffset;
 		}
 		this.setDirection = function(dir) {
 			this.dirX = dir.dirX;
@@ -1104,10 +1239,10 @@ function geronimo() {
 
 	function pacman() {
 		this.name = 'pacman'
-		this.radius = 15;
+		this.radius = PAC_CONF.radius;
 		// start location
-		this.posX = 0;
-		this.posY = 6 * CELL_PIXELS;
+		this.posX = PAC_CONF.gridStartX * CELL_PIXELS;
+		this.posY = PAC_CONF.gridStartY * CELL_PIXELS;
 
 		this.speed = MOVE_SPEED_IN_PIXELS;
 		this.angle1 = 0.25;
@@ -1118,6 +1253,7 @@ function geronimo() {
 		this.lives = 3;
 		this.stuckX = 0;
 		this.stuckY = 0;
+		this.stuckCount = 0;
 		this.frozen = false;		// used to play die Animation
 		this.freeze = function () {
 			this.frozen = true;
@@ -1142,40 +1278,52 @@ function geronimo() {
 
 			if ((this.stuckX == 0) && (this.stuckY == 0) && this.frozen == false) {
 
-				// Get the Grid Position of Pac
-				var gridX = this.getGridPosX();
-				var gridY = this.getGridPosY();
-				var gridAheadX = gridX;
-				var gridAheadY = gridY;
+				// Get the Grid Position of Pac (top left corner)
+				const gridX = getGridPosX(this.posX);
+				const gridY = getGridPosY(this.posY);
+				const field = game.getMapContent(gridX, gridY);
 
-				var field = game.getMapContent(gridX, gridY);
-
-				// get the field 1 ahead to check wall collisions
-				if ((this.dirX == 1) && (gridAheadX < 17)) gridAheadX += 1;
-				if ((this.dirY == 1) && (gridAheadY < 12)) gridAheadY += 1;
-				var fieldAhead = game.getMapContent(gridAheadX, gridAheadY);
+				// get the new grid cell being "moved into"
+				let gridAheadX = gridX;
+				let gridAheadY = gridY;
+				if (this.dirX === 1) {
+					//moving right, assume that we'll automatically be in the next cell
+					gridAheadX = (gridAheadX + 1) % game.gridWidth;
+				} else if (this.dirX === -1) {
+					// moving left, try to move and see the position
+					gridAheadX = getGridPosX(this.posX - this.speed);
+				}
+				if (this.dirY == 1) {
+					// moving down, assume you'll automatically be in the next cell
+					gridAheadY = (gridAheadY + 1) % game.gridHeight;
+				} else if (this.dirY == -1) {
+					// moving up, try to move and see the position
+					gridAheadY = getGridPosY(this.posY - this.speed);
+				}
+				const fieldAhead = game.getMapContent(gridAheadX, gridAheadY);
 
 
 				/*	Check Pill Collision			*/
 				if ((field === "pill") || (field === "powerpill")) {
 					//console.log("Pill found at ("+gridX+"/"+gridY+"). Pacman at ("+this.posX+"/"+this.posY+")");
 					if (
-						((this.dirX == 1) && (between(this.posX, game.toPixelPos(gridX) + this.radius - 5, game.toPixelPos(gridX + 1))))
-						|| ((this.dirX == -1) && (between(this.posX, game.toPixelPos(gridX), game.toPixelPos(gridX) + 5)))
-						|| ((this.dirY == 1) && (between(this.posY, game.toPixelPos(gridY) + this.radius - 5, game.toPixelPos(gridY + 1))))
-						|| ((this.dirY == -1) && (between(this.posY, game.toPixelPos(gridY), game.toPixelPos(gridY) + 5)))
-						|| (fieldAhead === "wall")
+						// moving right, assume it's ok if we are just a little bit inside
+						((this.dirX == 1) && (between(this.posX, game.toPixelPos(gridX) + 5 - this.radius, game.toPixelPos(gridX + 1))))
+						// moving left, assume it's ok if your center passes midpoint of cell
+						|| ((this.dirX == -1) && (between(this.posX, game.toPixelPos(gridX), game.toPixelPos(gridX) + (CELL_PIXELS / 2))))
+						|| ((this.dirY == 1) && (between(this.posY, game.toPixelPos(gridY) + 5 - this.radius, game.toPixelPos(gridY + 1))))
+						|| ((this.dirY == -1) && (between(this.posY, game.toPixelPos(gridY), game.toPixelPos(gridY) + (CELL_PIXELS / 2))))
 					) {
 						var s;
 						if (field === "powerpill") {
-							amplitude.getInstance().logEvent('Ate.PowerPill');
+							amplitude.getInstance().logEvent('Ate.PowerPill', { 'level': pacman.level });
 							Sound.play("powerpill");
 							s = 50;
 							this.enableBeastMode();
 							game.startGhostFrightened();
 						}
 						else {
-							amplitude.getInstance().logEvent('Ate.Pill');
+							amplitude.getInstance().logEvent('Ate.Pill', { 'level': pacman.level });
 							Sound.play("waka");
 							s = 10;
 							game.pillCount--;
@@ -1191,21 +1339,33 @@ function geronimo() {
 					this.stuckX = this.dirX;
 					this.stuckY = this.dirY;
 					pacman.stop();
-					// get out of the wall
-					if ((this.stuckX == 1) && ((this.posX % CELL_PIXELS) != 0)) this.posX -= 5;
-					if ((this.stuckY == 1) && ((this.posY % CELL_PIXELS) != 0)) this.posY -= 5;
-					if (this.stuckX == -1) this.posX += 5;
-					if (this.stuckY == -1) this.posY += 5;
+					if (field === "wall" || field === "door") {
+						// get out of the wall if we are in it
+						if ((this.stuckX == 1) && ((this.posX % CELL_PIXELS) != 0)) this.posX -= this.speed;
+						if ((this.stuckY == 1) && ((this.posY % CELL_PIXELS) != 0)) this.posY -= this.speed;
+						if (this.stuckX == -1) this.posX += this.speed;
+						if (this.stuckY == -1) this.posY += this.speed;
+					}
+					this.stuckCount += 1;
+				} else {
+					if (this.stuckCount > 0) {
+						amplitude.getInstance().logEvent('Stopped.By.Wall', { 'level': pacman.level, 'frameCount': this.stuckCount });
+						console.log('stuck on wall done ' + this.stuckCount)
+						this.stuckCount = 0;
+					}
 				}
-
+			} else {
+				this.stuckCount += 1;
 			}
 		}
 		this.checkDirectionChange = function () {
 			if (this.directionWatcher.get() != null) {
 				//console.log("next Direction: "+directionWatcher.get().name);
 
-				if ((this.stuckX == 1) && this.directionWatcher.get() == right) this.directionWatcher.set(null);
-				else {
+				// wtf is this?
+				if ((this.stuckX == 1) && this.directionWatcher.get() == right) {
+					this.directionWatcher.set(null);
+				} else {
 					// reset stuck events
 					this.stuckX = 0;
 					this.stuckY = 0;
@@ -1216,24 +1376,22 @@ function geronimo() {
 						//console.log("changeDirection to "+directionWatcher.get().name);
 
 						// check if possible to change direction without getting stuck
-						console.log("x: " + this.getGridPosX() + " + " + this.directionWatcher.get().dirX);
-						console.log("y: " + this.getGridPosY() + " + " + this.directionWatcher.get().dirY);
-						var x = this.getGridPosX() + this.directionWatcher.get().dirX;
-						var y = this.getGridPosY() + this.directionWatcher.get().dirY;
+						// console.log("x: " + getGridPosX(this.posX) + " + " + this.directionWatcher.get().dirX);
+						// console.log("y: " + getGridPosY(this.posY) + " + " + this.directionWatcher.get().dirY);
+						var x = getGridPosX(this.posX) + this.directionWatcher.get().dirX;
+						var y = getGridPosY(this.posY) + this.directionWatcher.get().dirY;
 						if (x <= -1) x = game.gridWidth - 1;
 						if (x >= game.gridWidth) x = 0;
 						if (y <= -1) x = game.gridHeight - 1;
 						if (y >= game.gridHeight) y = 0;
 
-						console.log("x: " + x);
-						console.log("y: " + y);
 						var nextTile = game.map.posY[y].posX[x].type;
-						console.log("checkNextTile: " + nextTile);
-
 						if (nextTile != "wall") {
 							this.setDirection(this.directionWatcher.get());
 							this.directionWatcher.set(null);
 						}
+					} else {
+						// console.log('Not aligned when checking direction: ' + this.posX + ", " + this.posY);
 					}
 				}
 			}
@@ -1309,8 +1467,8 @@ function geronimo() {
 		this.reset = function () {
 			this.unfreeze();
 			// TODO(kevin) - pull out as startX, startY for pacman
-			this.posX = 0;
-			this.posY = 6 * CELL_PIXELS;
+			this.posX = PAC_CONF.gridStartX * CELL_PIXELS;
+			this.posY = PAC_CONF.gridStartY * CELL_PIXELS;
 			this.setDirection(right);
 			this.stop();
 			this.stuckX = 0;
@@ -1337,11 +1495,11 @@ function geronimo() {
 			clyde.reset();
 			this.lives--;
 			console.log("pacman died, " + this.lives + " lives left");
-			amplitude.getInstance().logEvent('Died', { 'livesLeft': this.lives });
+			amplitude.getInstance().logEvent('Died', { 'livesLeft': this.lives, 'level': game.level });
 			if (this.lives <= 0) {
 				game.showMessage("Game over", "Total Score: " + game.score.score + "<br/>(Click to Restart!)");
 				game.gameOver = true;
-				amplitude.getInstance().logEvent('Game.Over', { 'score': game.score.score });
+				amplitude.getInstance().logEvent('Game.Over', { 'score': game.score.score, 'level': game.level  });
 				addHighscore();
 				// $('#playerEmail').focus();
 			}
@@ -1579,7 +1737,9 @@ function geronimo() {
 		// checkAppCache();
 
 		canvas = $("#myCanvas").get(0);
+		backgroundCanvas = $("#myBackground").get(0);
 		context = canvas.getContext("2d");
+		backgroundContext = backgroundCanvas.getContext('2d');
 
 
 
@@ -1611,7 +1771,7 @@ function geronimo() {
 			dotPosY = this.row;
 			$.each(this.posX, function () {
 				if (this.type == "pill") {
-					context.font = "13px PressStart2Play"
+					context.font = `${PILL_FONT_SIZE}px PressStart2Play`
 					context.textAlign = "center";
 					context.textBaseline = "middle";
 					var pillNumber = chance.integer({ min: 0, max: 1 });
@@ -1628,7 +1788,19 @@ function geronimo() {
 		context.fill();
 
 		// Walls
-		context.drawImage(canvas_walls, 0, 0);
+		if (shouldRenderBackground) {
+			if (useSmallMap) {
+				backgroundContext.drawImage(canvas_walls, 0, 0);
+			} else {
+				// const wallsImage = new Image();
+				// wallsImage.src = 'img/walls.png';
+				backgroundContext.drawImage(document.getElementById('wallsImg'), 0, 0);
+				// backgroundContext.drawImage(wallsImage, 0, 0);
+				// renderGrid(backgroundContext, backgroundCanvas, CELL_PIXELS / 2, "red");
+			};
+			console.log("rendered background")
+			shouldRenderBackground = false;
+		}
 
 
 		if (game.running == true) {
@@ -1641,8 +1813,8 @@ function geronimo() {
 
 			// Pac Man
 			context.beginPath();
-			context.fillStyle = "Yellow";
-			context.strokeStyle = "Yellow";
+			context.fillStyle = PAC_CONF.color;
+			context.strokeStyle = PAC_CONF.color;
 			context.arc(pacman.posX + CELL_PIXELS / 2, pacman.posY + CELL_PIXELS / 2, pacman.radius, pacman.angle1 * Math.PI, pacman.angle2 * Math.PI);
 			context.lineTo(pacman.posX + CELL_PIXELS / 2, pacman.posY + CELL_PIXELS / 2);
 			context.stroke();
@@ -1651,27 +1823,27 @@ function geronimo() {
 	}
 
 	// helper for debugging where things are in the grid
-	function renderGrid(gridPixelSize, color) {
-		context.save();
-		context.lineWidth = 0.5;
-		context.strokeStyle = color;
+	function renderGrid(ctx, cnv, gridPixelSize, color) {
+		ctx.save();
+		ctx.lineWidth = 0.5;
+		ctx.strokeStyle = color;
 
 		// horizontal grid lines
-		for (var i = 0; i <= canvas.height; i = i + gridPixelSize) {
-			context.beginPath();
-			context.moveTo(0, i);
-			context.lineTo(canvas.width, i);
-			context.closePath();
-			context.stroke();
+		for (var i = 0; i <= cnv.height; i = i + gridPixelSize) {
+			ctx.beginPath();
+			ctx.moveTo(0, i);
+			ctx.lineTo(cnv.width, i);
+			ctx.closePath();
+			ctx.stroke();
 		}
 
 		// vertical grid lines
-		for (var i = 0; i <= canvas.width; i = i + gridPixelSize) {
-			context.beginPath();
-			context.moveTo(i, 0);
-			context.lineTo(i, canvas.height);
-			context.closePath();
-			context.stroke();
+		for (var i = 0; i <= cnv.width; i = i + gridPixelSize) {
+			ctx.beginPath();
+			ctx.moveTo(i, 0);
+			ctx.lineTo(i, cnv.height);
+			ctx.closePath();
+			ctx.stroke();
 		}
 
 		context.restore();
@@ -1681,7 +1853,7 @@ function geronimo() {
 		// clear canvas
 		context.clearRect(0, 0, canvas.width, canvas.height);
 
-		// renderGrid(CELL_PIXELS / 2, "red");
+		// renderGrid(context, canvas, CELL_PIXELS / 2, "red");
 		renderContent();
 
 		if (game.dieAnimation == 1) pacman.dieAnimation();
@@ -1711,7 +1883,7 @@ function geronimo() {
 				}
 			}
 
-			console.log(game.frameCount)
+			// console.log(game.frameCount)
 			game.checkGhostMode();
 		}
 
