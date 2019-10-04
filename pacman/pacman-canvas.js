@@ -91,11 +91,11 @@ const buildWall = function buildWall(context, gridX, gridY, width, height) {
 const getFramesPerSecond = level => {
 	switch (level) {
 		case 1:
-			return 25;
-		case 2:
-			return 25;
-		default:
 			return 30;
+		case 2:
+			return 30;
+		default:
+			return 40;
 	}
 }
 
@@ -121,7 +121,7 @@ const getChaserSpeedPillThresholds = level => {
 		case 2:
 			return [40, 20];
 		case 3:
-			return [60, 30];
+			return [80, 40];
 		default:
 			return [100, 50];
 	}
@@ -319,6 +319,7 @@ function geronimo() {
 		this.pillSize = 3;
 		this.powerpillSize = POWER_PILL_SIZE;
 
+		this.isPinkyBugged = true;
 		this.ghostFrightened = false;
 		this.ghostFrightenedTimer = 240;
 		this.ghostKillCount = 0;
@@ -439,7 +440,7 @@ function geronimo() {
 				this.init(1);
 				game.showMessage("You did it!", "Final Score: " + game.score.score + "<br/>(Click to Restart!)");
 				game.gameOver = true;
-				amplitude.getInstance().logEvent('Game.Over', { 'score': game.score.score, 'level': game.level, 'lives': pacman.lives });
+				amplitude.getInstance().logEvent('Game.Over', { 'score': game.score.score, 'level': game.level, 'lives': pacman.lives, 'isPinkyBugged': game.isPinkyBugged  });
 				var identify = new amplitude.Identify().add('games played', 1);
 				amplitude.getInstance().identify(identify);
 				addHighscore();
@@ -448,7 +449,7 @@ function geronimo() {
 				// update things for new level
 				this.ghostSpeedNormal = getGhostSpeed(this.level);
 				console.log("Level " + game.level);
-				amplitude.getInstance().logEvent('Next.Level', { 'newLevel': game.level, 'lives': pacman.lives });
+				amplitude.getInstance().logEvent('Next.Level', { 'newLevel': game.level, 'lives': pacman.lives, 'isPinkyBugged': game.isPinkyBugged  });
 				game.showMessage("Level " + game.level, getLevelTitle(game.level) + "<br/>(Click to continue!)");
 				game.refreshLevel(".level");
 				this.init(1);
@@ -532,10 +533,20 @@ function geronimo() {
 			// reset timer if restart
 			if (state === 0) {
 				this.timer.reset();
+				this.score.set(0);
+				this.score.refresh(".score");
+				pacman.lives = 3;
+				game.level = 1;
+				this.refreshLevel(".level");
+				game.gameOver = false;
+				game.isPinkyBugged = Math.random() >= 0.5;
+				console.log('original pinky ' + game.isPinkyBugged);
+				amplitude.logEvent('Game.Started', { 'isPinkyBugged': game.isPinkyBugged });
 			}
 
-			// get Small Level Map
+			// Load map
 			if (useSmallMap) {
+				// get Small Level Map
 				$.ajax({
 					url: SMALL_MAP_CONFIG,
 					async: false,
@@ -600,18 +611,7 @@ function geronimo() {
 				});
 			});
 			this.pillCount = pillCount;
-
-			if (state === 0) {
-				this.score.set(0);
-				this.score.refresh(".score");
-				pacman.lives = 3;
-				game.level = 1;
-				this.refreshLevel(".level");
-				game.gameOver = false;
-				amplitude.logEvent('Game.Started');
-			}
 			pacman.reset();
-
 			game.drawHearts(pacman.lives);
 
 			this.frameCount = 0;
@@ -902,7 +902,7 @@ function geronimo() {
 
 		this.die = function () {
 			if (!this.dead) {
-				amplitude.getInstance().logEvent('Killed.Ghost', { 'name': name, 'lives': pacman.lives });
+				amplitude.getInstance().logEvent('Killed.Ghost', { 'name': name, 'lives': pacman.lives, 'isPinkyBugged': game.isPinkyBugged });
 				game.score.add(100 * Math.pow(2, game.ghostKillCount));
 				//this.reset();
 				this.dead = true;
@@ -994,14 +994,14 @@ function geronimo() {
 						const pdir = pacman.direction;
 						let pdirX = pdir.dirX;
 						let pdirY = pdir.dirY;
-						// pacman is facing UP (pdirX == 0, pdirY == -1), we should target 4 ahead and 4 left
-						if (pdir.dirX === up.dirX && pdir.dirY === up.dirY) {
+						// pacman is facing UP (pdirX == 0, pdirY == -1), pinky has a bug to target 4 ahead and 4 left in original pacman
+						if (game.isPinkyBugged && (pdir.dirX === up.dirX && pdir.dirY === up.dirY)) {
 							pdirX = pdir.pdirY;
 						}
 
 						// TODO(kevin) - game.width / pacman.radius seems wrong - width of map in cells should be game.width / (2 * pacman.radius)
-						var tX = (pacmanGridPosX + pdirX * 4) % (game.width / pacman.radius + 1);
-						var tY = (pacmanGridPosY + pdirY * 4) % (game.height / pacman.radius + 1);
+						var tX = (pacmanGridPosX + pdirX * 4) % game.gridWidth;
+						var tY = (pacmanGridPosY + pdirY * 4) % game.gridHeight;
 						break;
 
 					// target: pacman
@@ -1354,7 +1354,7 @@ function geronimo() {
 					this.stuckCount += 1;
 				} else {
 					if (this.stuckCount > 0) {
-						amplitude.getInstance().logEvent('Stopped.By.Wall', { 'level': game.level, 'frameCount': this.stuckCount });
+						amplitude.getInstance().logEvent('Stopped.By.Wall', { 'level': game.level, 'frameCount': this.stuckCount, 'isPinkyBugged': game.isPinkyBugged  });
 						console.log('stuck on wall done ' + this.stuckCount)
 						this.stuckCount = 0;
 					}
@@ -1403,7 +1403,7 @@ function geronimo() {
 		}
 		this.setDirection = (dir) => {
 			if (!this.isDying) {
-				amplitude.logEvent('Changed.Direction', { 'direction': dir.name });
+				amplitude.logEvent('Changed.Direction', { 'direction': dir.name, 'isPinkyBugged': game.isPinkyBugged  });
 				this.dirX = dir.dirX;
 				this.dirY = dir.dirY;
 				this.angle1 = dir.angle1;
@@ -1494,11 +1494,11 @@ function geronimo() {
 		this.dieFinal = function () {
 			this.lives--;
 			console.log("pacman died, " + this.lives + " lives left");
-			amplitude.getInstance().logEvent('Died', { 'livesLeft': this.lives, 'level': game.level, 'killer': this.killer });
+			amplitude.getInstance().logEvent('Died', { 'livesLeft': this.lives, 'level': game.level, 'killer': this.killer, 'isPinkyBugged': game.isPinkyBugged  });
 			if (this.lives <= 0) {
 				game.showMessage("Game over", "Total Score: " + game.score.score + "<br/>(Click to Restart!)");
 				game.gameOver = true;
-				amplitude.getInstance().logEvent('Game.Over', { 'score': game.score.score, 'level': game.level, 'lives': this.lives });
+				amplitude.getInstance().logEvent('Game.Over', { 'score': game.score.score, 'level': game.level, 'lives': this.lives, 'isPinkyBugged': game.isPinkyBugged  });
 				var identify = new amplitude.Identify().add('games played', 1);
 				amplitude.getInstance().identify(identify);
 				addHighscore();
