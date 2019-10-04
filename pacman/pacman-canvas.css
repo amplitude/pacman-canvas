@@ -228,6 +228,9 @@ audio {
 .level {
   display: inline-block;
 }
+.lives {
+  margin-left: 30px;
+}
 
 /* ---------- Controls ------------------------*/
 

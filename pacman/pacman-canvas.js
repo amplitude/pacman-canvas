@@ -440,6 +440,8 @@ function geronimo() {
 				game.showMessage("You did it!", "Final Score: " + game.score.score + "<br/>(Click to Restart!)");
 				game.gameOver = true;
 				amplitude.getInstance().logEvent('Game.Over', { 'score': game.score.score, 'level': game.level, 'lives': pacman.lives });
+				var identify = new amplitude.Identify().add('games played', 1);
+				amplitude.getInstance().identify(identify);
 				addHighscore();
 				// $('#playerEmail').focus();]\
 			} else {
@@ -959,7 +961,7 @@ function geronimo() {
 				if ((between(pacman.getCenterX(), this.getCenterX() - this.radius, this.getCenterX() + this.radius))
 					&& (between(pacman.getCenterY(), this.getCenterY() - this.radius, this.getCenterY() + this.radius))) {
 					if ((!this.dazzled) && (!this.dead)) {
-						pacman.die();
+						pacman.die(this.name);
 					}
 					else {
 						this.die();
@@ -1254,12 +1256,15 @@ function geronimo() {
 		this.stuckX = 0;
 		this.stuckY = 0;
 		this.stuckCount = 0;
-		this.frozen = false;		// used to play die Animation
-		this.freeze = function () {
-			this.frozen = true;
+		this.isDying = false;		// used to play die Animation
+		this.killer = null;
+		this.startDyingAnimation = function (killerName) {
+			this.killer = killerName;
+			this.isDying = true;
 		}
-		this.unfreeze = function () {
-			this.frozen = false;
+		this.stopDyingAnimation = function () {
+			this.killer = null;
+			this.isDying = false;
 		}
 		this.getCenterX = function () {
 			return this.posX + CELL_PIXELS / 2;
@@ -1276,7 +1281,7 @@ function geronimo() {
 
 		this.checkCollisions = () => {
 
-			if ((this.stuckX == 0) && (this.stuckY == 0) && this.frozen == false) {
+			if ((this.stuckX == 0) && (this.stuckY == 0) && this.isDying == false) {
 
 				// Get the Grid Position of Pac (top left corner)
 				const gridX = getGridPosX(this.posX);
@@ -1397,7 +1402,7 @@ function geronimo() {
 			}
 		}
 		this.setDirection = (dir) => {
-			if (!this.frozen) {
+			if (!this.isDying) {
 				amplitude.logEvent('Changed.Direction', { 'direction': dir.name });
 				this.dirX = dir.dirX;
 				this.dirY = dir.dirY;
@@ -1427,7 +1432,7 @@ function geronimo() {
 		};
 		this.move = function () {
 
-			if (!this.frozen) {
+			if (!this.isDying) {
 				if (this.beastModeTimer > 0) {
 					this.beastModeTimer--;
 					//console.log("Beast Mode: "+this.beastModeTimer);
@@ -1440,7 +1445,7 @@ function geronimo() {
 		}
 
 		this.eat = function () {
-			if (!this.frozen) {
+			if (!this.isDying) {
 				if (this.dirX == this.dirY == 0) {
 
 					this.angle1 -= this.mouth * 0.07;
@@ -1465,8 +1470,7 @@ function geronimo() {
 			this.dirY = 0;
 		}
 		this.reset = function () {
-			this.unfreeze();
-			// TODO(kevin) - pull out as startX, startY for pacman
+			this.stopDyingAnimation();
 			this.posX = PAC_CONF.gridStartX * CELL_PIXELS;
 			this.posY = PAC_CONF.gridStartY * CELL_PIXELS;
 			this.setDirection(right);
@@ -1482,27 +1486,29 @@ function geronimo() {
 				this.dieFinal();
 			}
 		}
-		this.die = function () {
+		this.die = function (killerName) {
 			Sound.play("die");
-			this.freeze();
+			this.startDyingAnimation(killerName);
 			this.dieAnimation();
 		}
 		this.dieFinal = function () {
+			this.lives--;
+			console.log("pacman died, " + this.lives + " lives left");
+			amplitude.getInstance().logEvent('Died', { 'livesLeft': this.lives, 'level': game.level, 'killer': this.killer });
+			if (this.lives <= 0) {
+				game.showMessage("Game over", "Total Score: " + game.score.score + "<br/>(Click to Restart!)");
+				game.gameOver = true;
+				amplitude.getInstance().logEvent('Game.Over', { 'score': game.score.score, 'level': game.level, 'lives': this.lives });
+				var identify = new amplitude.Identify().add('games played', 1);
+				amplitude.getInstance().identify(identify);
+				addHighscore();
+				// $('#playerEmail').focus();
+			}
 			this.reset();
 			pinky.reset();
 			inky.reset();
 			blinky.reset();
 			clyde.reset();
-			this.lives--;
-			console.log("pacman died, " + this.lives + " lives left");
-			amplitude.getInstance().logEvent('Died', { 'livesLeft': this.lives, 'level': game.level });
-			if (this.lives <= 0) {
-				game.showMessage("Game over", "Total Score: " + game.score.score + "<br/>(Click to Restart!)");
-				game.gameOver = true;
-				amplitude.getInstance().logEvent('Game.Over', { 'score': game.score.score, 'level': game.level  });
-				addHighscore();
-				// $('#playerEmail').focus();
-			}
 			game.drawHearts(this.lives);
 		}
 	}
@@ -1867,7 +1873,6 @@ function geronimo() {
 		// renderGrid(context, canvas, CELL_PIXELS / 2, "red");
 		renderContent();
 
-		if (game.dieAnimation == 1) pacman.dieAnimation();
 		if (game.pause != true) {
 			// Make changes before next loop
 			pacman.move();
