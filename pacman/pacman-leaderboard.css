@@ -1,37 +1,53 @@
 @font-face {
-  font-family: 'Press Start 2P';
+  font-family: "Press Start 2P";
   font-style: normal;
   font-weight: 400;
-  src: url('fonts/PressStart2Play.eot');
-  src: url('fonts/PressStart2Play.eot?iefix') format('eot'),
-       url('fonts/PressStart2Play.woff') format('woff'),
-       url('fonts/PressStart2Play.ttf') format('truetype');
+  src: url("fonts/PressStart2Play.eot");
+  src: url("fonts/PressStart2Play.eot?iefix") format("eot"),
+    url("fonts/PressStart2Play.woff") format("woff"),
+    url("fonts/PressStart2Play.ttf") format("truetype");
 }
 
 /* ---------------- */
 
 body {
-	background-color: #000;
-	color: white;
-	font-family: 'Press Start 2P', cursive;
+  background-color: #000;
+  color: white;
+  font-family: "Press Start 2P", cursive;
 }
 
-.content { width: 100%; max-width: 540px; text-align: left; margin: 0;}
+#highscore-content {
+  display: flex;
+  align-content: center;
+  justify-content: center;
+}
 
-#highscore-list {}
-#score { float: right; }
+#high-score-container {
+  width: 600px;
+}
+
+#high-score-container li {
+  margin-bottom: 10px;
+}
+
+#score {
+  float: right;
+}
 
 @media screen and (max-width: 650px) {
-	.content { max-width: none; }
+  .content {
+    max-width: none;
+  }
 }
 
 @media screen and (max-width: 400px) {
-	
-	html, body { 
-		overflow-x: hidden; 
-		height: 100%;
-		}
+  html,
+  body {
+    overflow-x: hidden;
+    height: 100%;
+  }
 
-	.content { min-height: 0; }
-
+  .content {
+    min-height: 0;
+  }
 }

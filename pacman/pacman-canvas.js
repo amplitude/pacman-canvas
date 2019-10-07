@@ -902,8 +902,9 @@ function geronimo() {
 
 		this.die = function () {
 			if (!this.dead) {
-				amplitude.getInstance().logEvent('Killed.Ghost', { 'name': name, 'lives': pacman.lives, 'isPinkyBugged': game.isPinkyBugged });
+				amplitude.getInstance().logEvent('Killed.Ghost', { 'name': name, 'lives': pacman.lives, 'isPinkyBugged': game.isPinkyBugged, 'ghostKillCount': game.ghostKillCount });
 				game.score.add(100 * Math.pow(2, game.ghostKillCount));
+				game.ghostKillCount+= 1;
 				//this.reset();
 				this.dead = true;
 				this.changeSpeed(game.ghostSpeedNormal);
