@@ -20,14 +20,15 @@ function getHighscore() {
     counter += 1;
 
     base(baseString).select({
+        fields: [ 'score', 'vehicle' ],
         sort: [
             { field: 'score', direction: 'desc' }
         ],
         maxRecords: 100,
     }).eachPage(function page(records, fetchNextPage) {
         records.forEach(function (record) {
-            $('#hidden-list').append("<li class='list-row'><div class='name'>" + record.get('name') + "</div><div class='score'>" + record.get('score') +
-                "</div><div class='vehicle'>" + record.get('vehicle') + "</div></li>");
+            $('#hidden-list').append("<li class='list-row'><div class='name'>" + record.get('vehicle') + "</div><div class='score'>" + record.get('score') +
+                "</div></li>");
         });
         fetchNextPage();
     }, function done(error) {
