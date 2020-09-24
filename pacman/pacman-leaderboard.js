@@ -10,6 +10,7 @@ function getHighscore() {
   $("#highscore-list").text("");
   base("Scores")
     .select({
+      fields: [ 'name', 'score' ],
       sort: [{ field: "score", direction: "desc" }],
       maxRecords: 25
     })

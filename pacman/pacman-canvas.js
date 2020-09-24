@@ -230,7 +230,6 @@ function geronimo() {
 		$("#highscore-form").html("Saving highscore...");
 		base('Scores').create({
 			'name': game.user,
-			'email': game.email,
 			'score': game.score.score,
 			'level': game.level
 		}, function (err, record) {
@@ -1572,6 +1571,10 @@ function geronimo() {
 			game.loggedIn = true;
 			game.user = $('#playerName').val();
 			game.email = $('#playerEmail').val();
+			amplitude.getInstance().logEvent('User Logged In', {
+				email: game.email,
+				name: game.user,
+			});
 			$('#email-form').hide();
 
 			// log new game - initialize the game and try to unpause
