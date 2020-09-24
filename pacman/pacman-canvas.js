@@ -230,7 +230,6 @@ function geronimo() {
 		$("#highscore-form").html("Saving highscore...");
 		base('Scores').create({
 			'name': game.user,
-			'email': game.email,
 			'score': game.score.score,
 			'level': game.level
 		}, function (err, record) {

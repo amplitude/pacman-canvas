@@ -378,7 +378,6 @@ function logHighscore(score, duration, vehicle, stage) {
 
     const table = EASY_MODE ? base('Data Explorer Scores') : base('Data Explorer Scores (Hard)');
     table.create({
-        'name': userName,
         'score': score,
         'vehicle': vehicleToScoreName[vehicle],
         'survival time': duration,
