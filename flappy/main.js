@@ -521,7 +521,7 @@ var loginState = {
 
             userName = name;
 
-            amplitude.getInstance().logEvent('User Logged In');
+            amplitude.getInstance().logEvent('User Logged In', { email: name });
 
             game.state.start('menu');
         } else {

@@ -1571,6 +1571,10 @@ function geronimo() {
 			game.loggedIn = true;
 			game.user = $('#playerName').val();
 			game.email = $('#playerEmail').val();
+			amplitude.getInstance().logEvent('User Logged In', {
+				email: game.email,
+				name: game.user,
+			});
 			$('#email-form').hide();
 
 			// log new game - initialize the game and try to unpause
