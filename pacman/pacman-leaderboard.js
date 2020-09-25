@@ -10,20 +10,19 @@ function getHighscore() {
   $("#highscore-list").text("");
   base("Scores")
     .select({
-      fields: [ 'name', 'score' ],
+      fields: ["name", "score"],
       sort: [{ field: "score", direction: "desc" }],
-      maxRecords: 25
+      maxRecords: 25,
     })
     .eachPage(
       function page(records, fetchNextPage) {
-        records.forEach(function(record) {
-          $("#highscore-list").append(
-            "<li>" +
-              record.get("name") +
-              "<span id='score'>" +
-              record.get("score") +
-              "</span></li>"
-          );
+        records.forEach(function (record) {
+          var liNode = $("<li/>").text(record.get("name"));
+          var spanNode = $("<span/>")
+            .attr("id", "score")
+            .text(record.get("score"));
+          liNode.append(spanNode);
+          $("#highscore-list").append(liNode);
         });
         fetchNextPage();
       },
