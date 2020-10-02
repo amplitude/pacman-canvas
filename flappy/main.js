@@ -1212,7 +1212,7 @@ var playState = {
 
 
 // Initialize Phaser and main frame
-var game = new Phaser.Game(MAX_X, MAX_Y, Phaser.AUTO);
+var game = new Phaser.Game(MAX_X, MAX_Y, Phaser.AUTO, 'game');
 
 Phaser.Device.whenReady(function() {
     game.plugins.add(PhaserInput.Plugin);
