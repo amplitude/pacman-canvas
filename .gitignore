@@ -1,3 +1,4 @@
 **.db**
 *.db
 /pacman/node_modules
+.DS_Store

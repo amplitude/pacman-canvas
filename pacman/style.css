@@ -415,13 +415,15 @@ textarea {
 }
 
 input[type="button"],
-input[type="submit"] {
+input[type="submit"],
+button {
   background: #326a21;
   text-transform: uppercase;
   /*font-family: 'Acme',sans-serif;*/
   border-radius: 15px;
   color: #fff;
   border: none;
+  font-family: inherit;
 }
 input[type="text"],
 input[type="password"],
@@ -601,4 +603,26 @@ textarea:focus {
 #adsense .adsbygoogle {
   margin-left: auto;
   margin-right: auto;
+}
+
+/*---------------------------------------------------------------------
+
+	Cookie Control and Footer
+
+*/
+
+.copyright {
+  font-size: 12px;
+  font-family: Arial, Helvetica, sans-serif;
+  text-align: center;
+  margin-top: 60px;
+}
+
+.copyright a {
+  text-decoration: underline !important;
+  background: none !important;
+}
+
+.ccc-notify-buttons {
+  padding-left: 20px;
 }
